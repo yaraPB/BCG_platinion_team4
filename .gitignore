@@ -1,1 +1,13 @@
-assets
+assets/
+node_modules/
+.next/
+out/
+coverage/
+.cache/
+*.tsbuildinfo
+.env*
+!.env.example
+*.log
+.DS_Store
+__pycache__/
+*.py[cod]

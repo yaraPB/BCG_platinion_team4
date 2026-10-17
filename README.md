@@ -1,69 +1,117 @@
 # ViaMensa
 
-**Food reaches people even when the roads don't.**
+A fullstack food logistics application built with **Next.js, React and TypeScript**. ViaMensa connects a geographic view of South Sudan with server-side route planning, stock allocation and disruption scenarios.
 
-Lifeline Logistics is a demo built by Team 4 for the BCG Platinion hackathon on world hunger. It shows how relief food can keep moving from ports, depots and hubs to camps and villages when the road network is unreliable.
+The interface uses a light theme: white surfaces, neutral typography and restrained green accents. MapLibre renders the map and animated delivery movements.
 
-When a road is cut, deliveries are rerouted. If a community is left with no road to its planned supplier, the nearest supplier it can still reach that has stock takes over. Live hazard alerts let teams plan for this before a road closes.
+## Quick start
+
+**Requirements:** Node.js 20.9+ and npm. Node.js 22 or 24 LTS is recommended.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open [localhost:3000](http://localhost:3000). No environment variables, API keys, Python installation or launcher scripts are required.
+
+For a production build:
+
+```bash
+npm run build
+npm start
+```
+
+Use `npm run dev -- --port 3001` to change the port.
 
 ## Features
 
-### 1. At-a-glance overview
+| Area | Behavior |
+| --- | --- |
+| Control tower | Three hubs, seven communities and fifteen schematic corridors on a light map. |
+| Transport animation | Illustrative movements along delivery routes; pause and resume controls; reduced motion support. |
+| Scenario planning | Presets and individual closures trigger server-side recalculation of routes, suppliers and stock. |
+| Dispatch board | Search communities, filter deliveries needing attention and select a destination. |
+| Delivery details | Supplier, route, allocation, travel estimate, remaining food and decision explanation. |
+| Network insights | Delivery outcomes, remaining inventory and illustrative corridor exposure. |
+| Export | Download the current dispatch plan as CSV. |
+| Map fallback | Interactive SVG schematic when geographic rendering is unavailable; keyboard-accessible corridor controls. |
 
-The page opens with four headline numbers that update as conditions change:
+## Stack and structure
 
-- **People with food en route**: how many people are still reachable
-- **Deliveries on plan**: how many are on plan, rerouted, served by a different supplier, or unreachable
-- **Network state**: whether the road network is still connected or has split into separate parts
-- **Chance of disruption (72 h)**: how likely the network is to be disrupted, according to the forecast
+| Layer | Implementation |
+| --- | --- |
+| Frontend | React components, TypeScript and responsive CSS |
+| Framework | Next.js App Router |
+| Backend | Next.js Route Handlers and a server-side TypeScript planning service |
+| Map | MapLibre GL JS with a light OpenFreeMap vector basemap and OpenStreetMap attribution |
+| Data | Typed synthetic fixtures; stateless scenario calculations |
+| Verification | ESLint, TypeScript and the Node test runner through `tsx` |
 
-### 2. Control tower
+```text
+src/
+  app/
+    api/network/route.ts      Network endpoint
+    api/plan/route.ts         Baseline and recalculation endpoints
+    globals.css              Light theme and responsive layout
+    layout.tsx               Root layout and metadata
+    page.tsx                 Server-rendered initial plan
+  components/
+    dashboard.tsx            Scenario state and API requests
+    dispatch-board.tsx       Searchable delivery list
+    delivery-detail.tsx      Selected route and allocation
+    insights.tsx             Outcomes, stock and corridor controls
+    map/                     MapLibre, SVG fallback and geometry
+  lib/
+    data/network.ts          Demonstration dataset
+    server/planning.ts       Routing, priority and stock allocation
+    types.ts                 Shared domain and API types
+tests/                       Planner and API tests
+docs/                        Architecture, API and product reference
+```
 
-An interactive map of suppliers, junctions, communities and roads.
+The supplied `index_lina.html`, `mock/` and `assets/` are design references. They are not application entry points or served by Next.js. The active application is entirely in `src/`.
 
-- **Close or reopen any road** by clicking it. Every delivery is recalculated straight away.
-- **One-click scenarios** to try common disruptions:
-  - Checkpoint on the N1 highway
-  - Sava river flood
-  - Storm (flood plus landslide)
-  - Port access blocked
-- **Status banner** that explains in plain language what changed: all roads open, roads closed but the network still connected, or the network split into separate parts.
-- **Delivery details**: select a community to see its route, supplier, travel time, why that choice was made, and the alternatives.
-- **Event log** listing every closure and decision, newest first.
-- **Dispatch board** listing all deliveries for the current cycle. The most urgent communities are served first, ranked by food insecurity level (IPC phase) and days of food left.
+## Commands
 
-### 3. Risk forecast and simulation (next 72 hours)
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Development server with hot reload |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | Code conventions and React rules |
+| `npm run typecheck` | TypeScript checks |
+| `npm test` | Routing, stock, priority and API validation tests |
+| `npm run check` | Lint, type checking and tests |
 
-- **Active hazard alerts** (heavy rainfall, landslide risk, insecurity, tropical storm), each with its source and likelihood. **Drag the sliders** to see how the outlook changes if an alert becomes more or less likely.
-- **Road failure probability**: the 8 roads most likely to fail, shown as a chart or a table.
-- **Delivery outcome by community**: run 2,000 simulated futures to see how likely each community is to stay on plan, be rerouted, need a different supplier, or be cut off.
-- **Apply to control tower**: send the most likely closures to the map to see their effect.
+Commit `package-lock.json` and use `npm ci` for reproducible installs. Generated files, dependencies and local caches are excluded through `.gitignore`.
 
-### 4. Fallback playbook
+## API overview
 
-A contingency plan that is ready before anything goes wrong.
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/network` | Nodes, corridors and scenario presets |
+| GET | `/api/plan` | Baseline dispatch plan |
+| POST | `/api/plan` | Recalculate for closed corridor IDs |
 
-- **Pre-positioning recommendations**: how much extra stock each supplier should hold so it can cover for others.
-- **Contingency plan per community**: the most likely disruption, the road closure that triggers it, and what to do.
+Example request body:
 
-### 5. Usability
+```json
+{ "closedRoads": ["juba-bor"] }
+```
 
-- Light and dark mode
-- Statuses use an icon and a label as well as colour, so they don't depend on colour alone
-- Hover tooltips on the map and charts
-- Every chart can also be viewed as a table
+## Data boundaries
 
-## How it works (in short)
+This is a planning demonstration. Town coordinates are approximate. Corridors, travel times, risk values, populations, food insecurity phases, stocks and food quantities are synthetic. Map lines are schematic connections; moving markers are illustrations rather than vehicle telemetry.
 
-1. **Map the network.** Suppliers, communities and the roads between them, with travel times that depend on the road surface.
-2. **Detect the split.** When roads close, check whether each community can still reach its supplier.
-3. **Reroute or switch supplier.** Use the fastest open route, or switch to the nearest supplier that can still reach the community and has stock. The neediest communities get stock first.
-4. **Predict and pre-plan.** Turn weather, river, landslide and security alerts into road risks, simulate the next 72 hours, and prepare the playbook in advance.
+The application does not currently include authentication, a database, live conflict/weather feeds or durable saved plans. Every request calculates a fresh scenario without changing another user's view. The farmer and NGO reference mock has separate data and is not connected to this API.
 
-The same approach works for any logistics network. This demo is set up for food security.
+MapLibre is bundled with the application. Basemap tiles need internet access; the corridor model does not need an external routing service.
 
-## Running the demo
+## Documentation
 
-Open `demo/index_lina.html` in a web browser.
+- [Architecture and planning rules](docs/ARCHITECTURE.md)
+- [API contract and examples](docs/API.md)
+- [Original farmer and NGO product plan](docs/PLAN.md) — historical reference
 
-*IPC = Integrated Food Security Phase Classification.*
+Implementation references: [Next.js](https://nextjs.org/docs/app), [Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route) and [MapLibre](https://maplibre.org/maplibre-gl-js/docs/).

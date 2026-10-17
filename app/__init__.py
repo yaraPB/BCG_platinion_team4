@@ -1,1 +1,0 @@
-"""ViaMensa demo backend."""

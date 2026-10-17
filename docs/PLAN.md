@@ -1,5 +1,7 @@
 # Platform plan: NGO platform connecting farmers and communities
 
+> Historical reference for the supplied HTML mock. This describes proposed farmer and NGO workflows, not the current Next.js API. For implemented behavior, see [README](../README.md), [Architecture](ARCHITECTURE.md) and [API](API.md).
+
 Working title in the mock: **HarvestLink** (placeholder, rename freely).
 
 ## 1. Problem and goal
