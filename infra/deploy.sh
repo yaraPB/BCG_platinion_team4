@@ -3,7 +3,8 @@
 #
 #   RESOURCE_GROUP=viamensa-rg LOCATION=westeurope ./infra/deploy.sh
 #
-# Optional env: PREFIX (default viamensa), ANTHROPIC_API_KEY (enables LLM alert analysis), IMAGE_TAG (default git sha).
+# Optional env: PREFIX (default viamensa), ANTHROPIC_API_KEY (enables LLM alert analysis), IMAGE_TAG (default git sha),
+# AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID (service-principal sign-in, no browser).
 # Secrets (Postgres password, JWT secret, demo password) are generated on first run and stored in Key Vault;
 # re-runs read them back from Key Vault so they stay stable.
 set -euo pipefail
@@ -15,6 +16,21 @@ TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%s)}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 gen() { LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$1"; }
+
+# Bicep and Azure MCP are .NET tools; hosts without libicu (e.g. minimal WSL) need invariant globalization.
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+# Non-interactive sign-in with a service principal when no az session exists.
+if ! az account show -o none 2>/dev/null; then
+  if [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZURE_CLIENT_SECRET:-}" ] && [ -n "${AZURE_TENANT_ID:-}" ]; then
+    echo "==> Signing in with service principal"
+    az login --service-principal -u "$AZURE_CLIENT_ID" -p "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID" -o none
+  else
+    echo "Not signed in. Run 'az login' or set AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AZURE_TENANT_ID." >&2
+    exit 1
+  fi
+fi
+[ -n "${AZURE_SUBSCRIPTION_ID:-}" ] && az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 
 echo "==> Resource group $RG ($LOCATION)"
 az group create -n "$RG" -l "$LOCATION" -o none
