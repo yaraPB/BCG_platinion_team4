@@ -16,7 +16,8 @@ PREFIX="${PREFIX:-viamensa}"
 TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%s)}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-gen() { LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$1"; }
+# Subshell without pipefail: head closing early sends SIGPIPE to tr, which pipefail would treat as fatal.
+gen() { (set +o pipefail; LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$1"); }
 
 # Bicep and Azure MCP are .NET tools; hosts without libicu (e.g. minimal WSL) need invariant globalization.
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
