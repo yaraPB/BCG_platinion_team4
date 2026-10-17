@@ -34,6 +34,12 @@ param demoUserPassword string
 param anthropicApiKey string = ''
 
 param postgresSku string = 'Standard_B1ms'
+
+@description('Grant AcrPull / Key Vault Secrets User via Azure RBAC. Needs Microsoft.Authorization write (Owner or RBAC Admin). When false (default, works with plain Contributor): images are pulled with the registry admin credential and the vault uses access policies.')
+param useRoleAssignments bool = false
+
+@description('Object ID of the deploying user/principal; given read/write on vault secrets so redeploys can reuse them (access-policy mode).')
+param deployerObjectId string = ''
 param apiMinReplicas int = 1
 param apiMaxReplicas int = 5
 
@@ -71,7 +77,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: names.acr
   location: location
   sku: { name: 'Basic' }
-  properties: { adminUserEnabled: false }
+  properties: { adminUserEnabled: !useRoleAssignments }
 }
 
 resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
@@ -79,7 +85,7 @@ resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' 
   location: location
 }
 
-resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useRoleAssignments) {
   name: guid(acr.id, identity.id, 'acrpull')
   scope: acr
   properties: { roleDefinitionId: acrPullRole, principalId: identity.properties.principalId, principalType: 'ServicePrincipal' }
@@ -91,13 +97,17 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   properties: {
     tenantId: subscription().tenantId
     sku: { family: 'A', name: 'standard' }
-    enableRbacAuthorization: true
+    enableRbacAuthorization: useRoleAssignments
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
+    accessPolicies: useRoleAssignments ? [] : concat(
+      [ { tenantId: subscription().tenantId, objectId: identity.properties.principalId, permissions: { secrets: [ 'get', 'list' ] } } ],
+      empty(deployerObjectId) ? [] : [ { tenantId: subscription().tenantId, objectId: deployerObjectId, permissions: { secrets: [ 'get', 'list', 'set' ] } } ]
+    )
   }
 }
 
-resource kvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource kvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useRoleAssignments) {
   name: guid(kv.id, identity.id, 'kvsecretsuser')
   scope: kv
   properties: { roleDefinitionId: kvSecretsUserRole, principalId: identity.properties.principalId, principalType: 'ServicePrincipal' }
@@ -166,6 +176,10 @@ resource env 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
+var registry = useRoleAssignments
+  ? { server: acr.properties.loginServer, identity: identity.id }
+  : { server: acr.properties.loginServer, username: acr.name, passwordSecretRef: 'acr-password' }
+var registrySecrets = useRoleAssignments ? [] : [ { name: 'acr-password', value: acr.listCredentials().passwords[0].value } ]
 var webFqdn = '${names.web}.${env.properties.defaultDomain}'
 var baseSecrets = [
   { name: 'database-url', keyVaultUrl: secretDbUrl.properties.secretUri, identity: identity.id }
@@ -195,8 +209,8 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
     managedEnvironmentId: env.id
     configuration: {
       ingress: { external: true, targetPort: 8000, transport: 'auto', allowInsecure: false }
-      registries: [ { server: acr.properties.loginServer, identity: identity.id } ]
-      secrets: concat(baseSecrets, anthropicSecrets)
+      registries: [ registry ]
+      secrets: concat(baseSecrets, anthropicSecrets, registrySecrets)
     }
     template: {
       containers: [
@@ -229,7 +243,8 @@ resource web 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
     managedEnvironmentId: env.id
     configuration: {
       ingress: { external: true, targetPort: 3000, transport: 'auto', allowInsecure: false }
-      registries: [ { server: acr.properties.loginServer, identity: identity.id } ]
+      registries: [ registry ]
+      secrets: registrySecrets
     }
     template: {
       containers: [

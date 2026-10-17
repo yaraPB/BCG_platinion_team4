@@ -3,14 +3,15 @@
 #
 #   RESOURCE_GROUP=viamensa-rg LOCATION=westeurope ./infra/deploy.sh
 #
-# Optional env: PREFIX (default viamensa), ANTHROPIC_API_KEY (enables LLM alert analysis), IMAGE_TAG (default git sha),
+# Optional env: LOCATION (default: the existing group's region), USE_ROLE_ASSIGNMENTS=true (needs Owner/RBAC Admin;
+# default false works with plain Contributor), PREFIX (default viamensa), ANTHROPIC_API_KEY (enables LLM alert analysis), IMAGE_TAG (default git sha),
 # AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID (service-principal sign-in, no browser).
 # Secrets (Postgres password, JWT secret, demo password) are generated on first run and stored in Key Vault;
 # re-runs read them back from Key Vault so they stay stable.
 set -euo pipefail
 
 RG="${RESOURCE_GROUP:?set RESOURCE_GROUP}"
-LOCATION="${LOCATION:-westeurope}"
+LOCATION="${LOCATION:-}"
 PREFIX="${PREFIX:-viamensa}"
 TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%s)}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -32,8 +33,23 @@ if ! az account show -o none 2>/dev/null; then
 fi
 [ -n "${AZURE_SUBSCRIPTION_ID:-}" ] && az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 
-echo "==> Resource group $RG ($LOCATION)"
-az group create -n "$RG" -l "$LOCATION" -o none
+# Reuse an existing resource group (common when you only have Contributor on a pre-created group).
+if EXISTING=$(az group show -n "$RG" --query location -o tsv 2>/dev/null); then
+  LOCATION="${LOCATION:-$EXISTING}"
+  echo "==> Using existing resource group $RG ($EXISTING)"
+else
+  LOCATION="${LOCATION:-westeurope}"
+  echo "==> Creating resource group $RG ($LOCATION)"
+  az group create -n "$RG" -l "$LOCATION" -o none
+fi
+
+# Object ID of whoever deploys: granted vault-secret access so redeploys can read the generated secrets back.
+if [ "$(az account show --query user.type -o tsv)" = "servicePrincipal" ]; then
+  DEPLOYER_ID=$(az ad sp show --id "$(az account show --query user.name -o tsv)" --query id -o tsv 2>/dev/null || true)
+else
+  DEPLOYER_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)
+fi
+USE_RBAC="${USE_ROLE_ASSIGNMENTS:-false}"
 
 # Reuse secrets if the vault already exists (stable passwords across deploys).
 KV=$(az keyvault list -g "$RG" --query "[?starts_with(name, '${PREFIX}kv')].name | [0]" -o tsv 2>/dev/null || true)
@@ -46,7 +62,8 @@ DEMO_PASSWORD="${DEMO_PASSWORD:-$(read_secret demo-user-password)}"; DEMO_PASSWO
 ANTHROPIC="${ANTHROPIC_API_KEY:-$(read_secret anthropic-api-key)}"
 
 params=(prefix="$PREFIX" location="$LOCATION" postgresPassword="$PG_PASSWORD" jwtSecret="$JWT_SECRET"
-        demoUserPassword="$DEMO_PASSWORD" anthropicApiKey="$ANTHROPIC")
+        demoUserPassword="$DEMO_PASSWORD" anthropicApiKey="$ANTHROPIC" useRoleAssignments="$USE_RBAC"
+        deployerObjectId="$DEPLOYER_ID")
 
 echo "==> Phase 1: platform (registry, vault, database, environment)"
 OUT=$(az deployment group create -g "$RG" -f "$ROOT/infra/main.bicep" -n "viamensa-platform" \
