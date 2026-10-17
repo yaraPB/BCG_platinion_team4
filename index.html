@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f5">
+  <title>ViaMensa | Food corridor control tower</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#overview" aria-label="ViaMensa home"><span class="brand-mark">V<span>↗</span></span><span>ViaMensa<small>FOOD ACCESS INTELLIGENCE</small></span></a>
+    <nav aria-label="Main navigation"><a href="#overview">Overview</a><a href="#control-tower">Control tower</a><a href="#insights">Insights</a></nav>
+    <div class="top-actions"><span class="demo-pill"><span class="live-dot"></span> Scenario demo</span><a class="outline-link" href="/mock/index.html">Farmer &amp; NGO prototype ↗</a></div>
+  </header>
+
+  <main id="overview">
+    <section class="intro shell">
+      <div><div class="eyebrow"><span class="eyebrow-line"></span> SOUTH SUDAN · ILLUSTRATIVE NETWORK</div><h1>See the food journey.<br><em>Protect the final mile.</em></h1><p>Explore how relief food moves from logistics hubs to communities. Close a corridor to see new routes, supplier changes, and people at risk in seconds.</p></div>
+      <div class="intro-side"><span class="mini-label">OPERATING VIEW</span><strong>From supply<br>to doorstep.</strong><span>01 / 03</span></div>
+    </section>
+
+    <section class="metrics shell" aria-label="Current network metrics">
+      <article class="metric"><span class="metric-icon">◎</span><div class="metric-label">People reachable</div><div class="metric-value" id="peopleMetric">—</div><div class="metric-foot" id="peopleFoot">Across 7 communities</div></article>
+      <article class="metric"><span class="metric-icon">↗</span><div class="metric-label">Food on the move</div><div class="metric-value" id="tonnesMetric">—</div><div class="metric-foot">Tonnes assigned this cycle</div></article>
+      <article class="metric"><span class="metric-icon">▤</span><div class="metric-label">Deliveries on plan</div><div class="metric-value" id="planMetric">—</div><div class="metric-foot" id="planFoot">Of 7 destinations</div></article>
+      <article class="metric metric-alert"><span class="metric-icon">!</span><div class="metric-label">Need intervention</div><div class="metric-value" id="actionMetric">—</div><div class="metric-foot" id="actionFoot">Destinations changed or cut off</div></article>
+    </section>
+
+    <section id="control-tower" class="tower-section shell">
+      <div class="section-heading"><div><div class="eyebrow">01 / CONTROL TOWER</div><h2>Food corridors, in motion</h2><p>Follow supplies from hubs to communities. Select a delivery or corridor for details.</p></div><button type="button" class="text-button" id="resetButton">↺ Reset scenario</button></div>
+      <div class="scenario-row"><span>EXPLORE A DISRUPTION</span><div id="scenarioButtons" class="scenario-buttons"></div></div>
+      <div class="tower-grid">
+        <div class="map-card">
+          <div class="map-top"><div><span class="map-kicker">NETWORK MAP</span><strong>South Sudan</strong></div><div class="map-top-right"><span id="mapState" class="state-chip">All corridors open</span><button type="button" id="animateButton" class="map-control" aria-pressed="true">Ⅱ Pause flow</button></div></div>
+          <div id="map" aria-label="Interactive map of illustrative food supply corridors in South Sudan"></div>
+          <div id="mapFallback" class="map-fallback" hidden></div>
+          <div class="map-bottom"><div class="legend"><span><i class="legend-dot hub"></i> Supply hub</span><span><i class="legend-dot community"></i> Community</span><span><i class="legend-line route"></i> Selected delivery</span><span><i class="legend-line closed"></i> Closed corridor</span></div><span class="map-scale">Routes are schematic · Map © OpenStreetMap, © CARTO</span></div>
+        </div>
+        <aside class="dispatch-card"><div class="dispatch-head"><div><span class="map-kicker">DISPATCH BOARD</span><h3>Today's deliveries</h3></div><span id="deliveryCount" class="count-pill">7 routes</span></div><p class="dispatch-intro">Prioritised by food insecurity and days of food left.</p><div id="deliveries" class="deliveries"></div></aside>
+      </div>
+    </section>
+
+    <section id="insights" class="insights shell"><div class="section-heading"><div><div class="eyebrow">02 / DECISION SUPPORT</div><h2>From signal to action</h2><p>One connected view of the route, its stock source, and its delivery outcome.</p></div></div><div class="insight-grid">
+      <article class="insight-card selected-detail"><div class="card-title"><span class="card-number">01</span><h3>Selected delivery</h3></div><div id="selectedDetail"></div></article>
+      <article class="insight-card"><div class="card-title"><span class="card-number">02</span><h3>Delivery outcomes</h3></div><div id="outcomeChart"></div></article>
+      <article class="insight-card"><div class="card-title"><span class="card-number">03</span><h3>Corridor exposure</h3></div><p class="small-muted">Illustrative likelihood of disruption over 72 hours</p><div id="riskChart"></div></article>
+    </div></section>
+
+    <section class="method shell"><div class="method-label">HOW THE MODEL WORKS</div><div class="method-steps"><div><span>01</span><strong>Locate need</strong><p>Communities are ranked by food insecurity and days of food left.</p></div><div><span>02</span><strong>Find a path</strong><p>The shortest open route connects a stocked hub to each destination.</p></div><div><span>03</span><strong>Adapt instantly</strong><p>Closed links trigger rerouting or a supplier change; unreachable places are flagged.</p></div></div></section>
+  </main>
+  <footer><div class="shell footer-inner"><strong>ViaMensa</strong><p>Illustrative planning demo. Approximate locations; synthetic corridors, travel times, risk, stocks and people served. No live conflict or access data.</p><span>Built for a world where food keeps moving.</span></div></footer>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

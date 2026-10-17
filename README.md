@@ -1,14 +1,10 @@
-# Lifeline Logistics
+# ViaMensa
 
 **Food reaches people even when the roads don't.**
 
 Lifeline Logistics is a demo built by Team 4 for the BCG Platinion hackathon on world hunger. It shows how relief food can keep moving from ports, depots and hubs to camps and villages when the road network is unreliable.
 
 When a road is cut, deliveries are rerouted. If a community is left with no road to its planned supplier, the nearest supplier it can still reach that has stock takes over. Live hazard alerts let teams plan for this before a road closes.
-
-> The demo runs on a fictional network, the **Kaveri region**: 4 suppliers, 8 communities and about 108,500 people. All stocks, roads and alerts are made up.
-
----
 
 ## Features
 
@@ -57,8 +53,6 @@ A contingency plan that is ready before anything goes wrong.
 - Hover tooltips on the map and charts
 - Every chart can also be viewed as a table
 
----
-
 ## How it works (in short)
 
 1. **Map the network.** Suppliers, communities and the roads between them, with travel times that depend on the road surface.
@@ -68,12 +62,8 @@ A contingency plan that is ready before anything goes wrong.
 
 The same approach works for any logistics network. This demo is set up for food security.
 
----
-
 ## Running the demo
 
 Open `demo/index_lina.html` in a web browser.
-
----
 
 *IPC = Integrated Food Security Phase Classification.*
