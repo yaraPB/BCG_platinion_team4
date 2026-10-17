@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lifeline Logistics — Food corridors that don't break</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --surface-2: #f1f0ec;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
+  --sea: #dde8f1; --river: #a9c6de; --hill: #efeee8; --road: #b4b2aa; --hull: #0b0b0b;
+  --btn: #0b0b0b; --btn-ink: #fcfcfb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --sea: #17212a; --river: #2b4560; --hill: #222220; --road: #5d5c57; --hull: #f0efec;
+    --btn: #f0efec; --btn-ink: #1a1a19;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+  --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --sea: #17212a; --river: #2b4560; --hill: #222220; --road: #5d5c57; --hull: #f0efec;
+  --btn: #f0efec; --btn-ink: #1a1a19;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: inherit; }
+h1, h2, h3 { margin: 0; line-height: 1.2; }
+h2 { font-size: 22px; }
+h3 { font-size: 15px; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.ink2 { color: var(--ink-2); }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+/* top bar */
+.topbar { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); }
+.topbar .wrap { display: flex; align-items: center; gap: 24px; height: 56px; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; text-decoration: none; }
+.logo svg { width: 26px; height: 26px; }
+.nav { display: flex; gap: 4px; margin-left: auto; }
+.nav a { text-decoration: none; padding: 6px 10px; border-radius: 6px; color: var(--ink-2); }
+.nav a:hover { background: var(--surface-2); color: var(--ink); }
+.btn { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--ink); padding: 6px 12px; border-radius: 8px; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--btn); color: var(--btn-ink); border-color: transparent; }
+.btn.primary:hover { opacity: .88; }
+.btn[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); }
+.btn.small { padding: 3px 9px; font-size: 12px; }
+
+/* hero */
+.hero { padding: 40px 0 28px; }
+.hero h1 { font-size: 36px; max-width: 760px; letter-spacing: -.01em; }
+.hero p.lead { font-size: 17px; color: var(--ink-2); max-width: 760px; margin-top: 12px; }
+.hero .cta { display: flex; gap: 10px; margin-top: 20px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile .k { color: var(--ink-2); font-size: 12px; }
+.tile .v { font-size: 26px; font-weight: 650; margin-top: 2px; }
+.tile .s { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+section.block { padding: 36px 0; border-top: 1px solid var(--border); }
+.sec-head { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.sec-head p { color: var(--ink-2); max-width: 720px; margin-top: 6px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.card-head .sp { margin-left: auto; display: flex; gap: 6px; }
+
+/* control tower */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.toolbar .lbl { color: var(--ink-2); font-size: 12px; margin-right: 4px; }
+.banner { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 12px; }
+.banner b { font-weight: 650; }
+.tower { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; }
+.map svg { display: block; width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 26px; height: 14px; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.detail dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 8px 0 0; font-size: 13px; }
+.detail dt { color: var(--ink-2); }
+.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
+.reason { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); font-size: 13px; }
+.alts { margin-top: 10px; font-size: 13px; }
+.alts div { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid var(--grid); }
+.alts div span:last-child { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.log { max-height: 260px; overflow: auto; font-size: 12.5px; }
+.log div { padding: 6px 0; border-top: 1px solid var(--grid); }
+.log time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+
+/* status chip: icon + label, never color alone */
+.chip { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.chip i { font-style: normal; width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 600; color: var(--ink-2); font-size: 12px; padding: 8px; border-bottom: 1px solid var(--axis); }
+td { padding: 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.sel td { background: var(--surface-2); }
+tbody tr { cursor: pointer; }
+.route { color: var(--ink-2); font-size: 12px; }
+
+/* forecast */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.alert { padding: 10px 0; border-top: 1px solid var(--grid); }
+.alert:first-of-type { border-top: 0; }
+.alert .t { display: flex; gap: 8px; align-items: baseline; }
+.alert .t b { font-weight: 600; }
+.alert .t span { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+.alert .src { color: var(--muted); font-size: 12px; }
+.alert input { width: 100%; accent-color: var(--ink); }
+.bars .row { display: grid; grid-template-columns: 150px 1fr 44px; gap: 10px; align-items: center; height: 26px; }
+.bars .row .name { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bars .track { height: 12px; position: relative; border-left: 1px solid var(--axis); }
+.bars .bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--s1); border-radius: 0 4px 4px 0; }
+.bars .val { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.stack .row { display: grid; grid-template-columns: 150px 1fr 56px; gap: 10px; align-items: center; height: 30px; }
+.stack .row .name { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stack .segs { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; }
+.stack .segs div { height: 100%; }
+.stack .val { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.axis { display: grid; grid-template-columns: 150px 1fr 56px; gap: 10px; font-size: 11px; color: var(--muted); margin-top: 4px; }
+.axis div:nth-child(2) { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.bars .axis { grid-template-columns: 150px 1fr 44px; }
+.hidden { display: none !important; }
+.simbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.kicker { font-size: 12px; color: var(--ink-2); }
+.hit { cursor: pointer; }
+
+/* how */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.step .n { font-size: 12px; color: var(--muted); }
+.step h3 { margin: 4px 0 6px; }
+.step p { color: var(--ink-2); font-size: 13px; }
+code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+footer { padding: 28px 0 48px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
+
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); box-shadow: 0 6px 24px rgba(0,0,0,.14); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; max-width: 280px; display: none; }
+.tip b { font-weight: 650; }
+.tip .r { display: flex; gap: 12px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1000px) {
+  .tower, .grid2 { grid-template-columns: 1fr; }
+  .tiles, .steps { grid-template-columns: 1fr 1fr; }
+  .nav { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="#top">
+      <svg viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="currentColor"/><path d="M6 17 L11 9 L15 14 L20 7" stroke="var(--surface)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="7" r="2.2" fill="var(--surface)"/></svg>
+      Lifeline Logistics
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#tower">Control tower</a>
+      <a href="#forecast">Risk forecast</a>
+      <a href="#playbook">Fallback playbook</a>
+      <a href="#how">How it works</a>
+    </nav>
+    <button class="btn small" id="themeBtn" type="button">Dark mode</button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <p class="kicker">Humanitarian food logistics · Kaveri region (demo network)</p>
+      <h1>Food reaches people even when the roads don't.</h1>
+      <p class="lead">We move relief food from ports, depots and hubs to camps and villages on unstable road networks. When a road is cut we reroute. If the cut leaves a community with no road to its supplier, we find the nearest supplier it can still reach that has stock. Live hazard alerts let us plan for this before the road closes.</p>
+      <div class="cta">
+        <a class="btn primary" href="#tower" style="text-decoration:none">Open control tower</a>
+        <a class="btn" href="#forecast" style="text-decoration:none">See 72-hour risk forecast</a>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+  </section>
+
+  <!-- CONTROL TOWER -->
+  <section class="block" id="tower">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Control tower</h2>
+          <p>Suppliers, junctions and destinations form one graph. <b>Click any road to close or reopen it</b>, or trigger a scenario. Each delivery is recalculated straight away: shortest path first, then a fallback supplier if the planned one is unreachable, too slow or out of stock.</p>
+        </div>
+      </div>
+
+      <div class="toolbar" id="scenarios"><span class="lbl">Scenarios</span></div>
+      <div class="banner" id="banner" role="status"></div>
+
+      <div class="tower">
+        <div class="card map">
+          <svg id="map" viewBox="0 0 1000 600" role="img" aria-label="Road network map of suppliers and destinations"></svg>
+          <div class="legend" id="mapLegend"></div>
+        </div>
+        <div class="side">
+          <div class="card detail" id="detail"></div>
+          <div class="card">
+            <div class="card-head"><h3>Event log</h3><span class="sp muted" style="font-size:12px">newest first</span></div>
+            <div class="log" id="log"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="card-head"><h3>Dispatch board · this cycle</h3><span class="sp muted" style="font-size:12px">Served in priority order: IPC phase, then days of food left</span></div>
+        <div style="overflow:auto"><table id="dispatch"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORECAST -->
+  <section class="block" id="forecast">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Risk forecast &amp; simulation · next 72 hours</h2>
+          <p>Hazard alerts are converted into a failure probability for each road, based on how exposed that road is to each hazard. We then run thousands of simulated futures through the same rerouting engine. This shows which deliveries are likely to need a fallback, and which supplier will have to cover them.</p>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h3>Active alerts</h3><span class="sp muted" style="font-size:12px">drag to test sensitivity</span></div>
+          <div id="alerts"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Road failure probability · top 8</h3>
+            <span class="sp"><button class="btn small" data-view="corr" aria-pressed="false">Table</button></span></div>
+          <div class="bars" id="corrChart"></div>
+          <div id="corrTable" class="hidden"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="card-head"><h3>Delivery outcome probability by destination</h3>
+          <span class="sp"><button class="btn small" data-view="out" aria-pressed="false">Table</button></span></div>
+        <div class="simbar">
+          <button class="btn primary" id="runSim" type="button">Run 2,000 simulations</button>
+          <button class="btn" id="applyLikely" type="button">Apply most-likely closures to control tower</button>
+          <span class="muted" id="simMeta"></span>
+        </div>
+        <div class="legend" id="outLegend" style="margin:0 0 10px"></div>
+        <div class="stack" id="outChart"></div>
+        <div id="outTable" class="hidden"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAYBOOK -->
+  <section class="block" id="playbook">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Fallback playbook</h2>
+          <p>Prepared before any road closes. For each destination the playbook gives the most likely contingency, the road closure that triggers it and the action to take. For each supplier it shows how much extra stock to pre-position so the fallback can actually deliver.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Pre-positioning recommendations</h3></div>
+        <div style="overflow:auto"><table id="prestage"></table></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-head"><h3>Contingency plan per destination</h3></div>
+        <div style="overflow:auto"><table id="plays"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="sec-head"><div><h2>How it works</h2><p>A small set of graph algorithms run continuously. The same engine applies to any logistics network; this demo is set up for food security.</p></div></div>
+      <div class="steps">
+        <div class="card step"><div class="n">01</div><h3>Network as a graph</h3><p>Ports, depots and hubs are <b>supplier nodes</b>; camps and villages are <b>demand nodes</b>; roads are edges weighted by travel time (distance ÷ speed for paved, gravel or track).</p></div>
+        <div class="card step"><div class="n">02</div><h3>Detect the split</h3><p>When a road closes, we recompute <b>connected components</b>. If a destination and its planned supplier are now in different subnetworks, rerouting cannot help, and we search for a new supplier inside the destination's own subnetwork.</p></div>
+        <div class="card step"><div class="n">03</div><h3>Reroute or switch supplier</h3><p>Dijkstra from each destination ranks every reachable supplier. We keep the planned supplier unless it is cut off, out of stock, or its detour is much slower than the nearest alternative. The highest-need communities (IPC phase, days of food left) are assigned stock first.</p></div>
+        <div class="card step"><div class="n">04</div><h3>Predict and pre-plan</h3><p>Weather, river, landslide and security feeds give each road a failure probability. A Monte Carlo simulation of the network produces the playbook and tells us where to pre-position stock before the road closes.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Lifeline Logistics: demo for the BCG Platinion hackathon on world hunger. Network, stocks and alerts are fictional. IPC = Integrated Food Security Phase Classification.</div></footer>
+
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+/* ======================= DATA (edit freely) ======================= */
+const KM_PER_PX = 0.42;
+const SPEED = { paved: 55, gravel: 30, track: 18 };          // km/h
+const BASE_RISK = { paved: 0.01, gravel: 0.02, track: 0.04 }; // background failure prob / 72 h
+
+// type: supplier | junction | dest.  lab = [dx, dy, anchor] label offset
+const NODES = [
+  { id: 'S1', type: 'supplier', name: 'Port Amara Warehouse', x: 90,  y: 330, stock: 900, lab: [0, 28, 'middle'] },
+  { id: 'S2', type: 'supplier', name: 'Kessa Grain Depot',    x: 300, y: 105, stock: 120, lab: [0, -18, 'middle'] },
+  { id: 'S3', type: 'supplier', name: 'Mira Relief Hub',      x: 930, y: 250, stock: 260, lab: [0, 28, 'middle'] },
+  { id: 'S4', type: 'supplier', name: 'Tolu Silo',            x: 770, y: 530, stock: 40,  lab: [0, 28, 'middle'] },
+  { id: 'J1', type: 'junction', name: 'Amara Junction', x: 220, y: 320 },
+  { id: 'J2', type: 'junction', name: 'Kessa Cross',    x: 340, y: 215 },
+  { id: 'J3', type: 'junction', name: 'Lowland Fork',   x: 310, y: 450 },
+  { id: 'J4', type: 'junction', name: 'Sava Bridge W',  x: 470, y: 300, show: true, lab: [-8, -10, 'end'] },
+  { id: 'J5', type: 'junction', name: 'Sava Bridge E',  x: 575, y: 300 },
+  { id: 'J6', type: 'junction', name: 'Doru Ford W',    x: 455, y: 480, show: true, lab: [-8, 16, 'end'] },
+  { id: 'J7', type: 'junction', name: 'Doru Ford E',    x: 585, y: 490 },
+  { id: 'J8', type: 'junction', name: 'Highland Pass',  x: 720, y: 140, show: true, lab: [0, -10, 'middle'] },
+  { id: 'J9', type: 'junction', name: 'Eastern Ring',   x: 720, y: 330 },
+  { id: 'J10', type: 'junction', name: 'North Gate',    x: 500, y: 95,  show: true, lab: [0, -10, 'middle'] },
+  { id: 'D1', type: 'dest', name: 'Baraka Camp',     x: 190, y: 480, pop: 18000, ipc: 4, need: 54, days: 4, planned: 'S1' },
+  { id: 'D2', type: 'dest', name: 'Nyeri Village',   x: 420, y: 175, pop: 6500,  ipc: 3, need: 20, days: 7, planned: 'S2' },
+  { id: 'D3', type: 'dest', name: 'Ulan Settlement', x: 640, y: 215, pop: 22000, ipc: 4, need: 66, days: 3, planned: 'S1' },
+  { id: 'D4', type: 'dest', name: 'Sefa Town',       x: 640, y: 420, pop: 9000,  ipc: 3, need: 27, days: 5, planned: 'S1' },
+  { id: 'D5', type: 'dest', name: 'Doro IDP Camp',   x: 830, y: 400, pop: 30000, ipc: 4, need: 90, days: 6, planned: 'S3' },
+  { id: 'D6', type: 'dest', name: 'Lake Ilo',        x: 905, y: 520, pop: 7000,  ipc: 3, need: 21, days: 8, planned: 'S4', lab: [0, 28, 'middle'] },
+  { id: 'D7', type: 'dest', name: 'Highland Clinic', x: 830, y: 95,  pop: 4000,  ipc: 4, need: 12, days: 5, planned: 'S2' },
+  { id: 'D8', type: 'dest', name: 'Amara Outskirts', x: 150, y: 200, pop: 12000, ipc: 3, need: 36, days: 9, planned: 'S1', lab: [0, -18, 'middle'] },
+];
+
+// [a, b, surface, name, hazard exposure {alertId: 0..1}]
+const ROADS = [
+  ['S1', 'J1', 'paved',  'N1 Coastal Hwy',   { cyclone: 0.35 }],
+  ['S1', 'D1', 'track',  'Coastal track',    { cyclone: 0.9 }],
+  ['S1', 'D8', 'gravel', 'Port north road',  { cyclone: 0.5 }],
+  ['J1', 'D8', 'paved',  'Outskirts link',   {}],
+  ['S2', 'D8', 'gravel', 'Kessa west road',  {}],
+  ['S2', 'J2', 'paved',  'N3 Kessa road',    {}],
+  ['J1', 'J2', 'gravel', 'Amara–Kessa road', {}],
+  ['J2', 'D2', 'gravel', 'Nyeri road',       { conflict: 0.3 }],
+  ['J1', 'J3', 'paved',  'N2 Lowland road',  {}],
+  ['J3', 'D1', 'gravel', 'Baraka road',      {}],
+  ['J1', 'J4', 'paved',  'N1 Central Hwy',   { conflict: 0.4 }],
+  ['J2', 'J4', 'gravel', 'Kessa–Sava road',  {}],
+  ['J3', 'J6', 'gravel', 'Lowland–Doru road',{ flood: 0.2 }],
+  ['J4', 'J6', 'gravel', 'West bank road',   { flood: 0.35 }],
+  ['J4', 'J5', 'paved',  'Sava Bridge',      { flood: 0.85 }],
+  ['J6', 'J7', 'gravel', 'Doru Ford',        { flood: 0.95 }],
+  ['J5', 'J7', 'gravel', 'East bank road',   { flood: 0.35 }],
+  ['J5', 'D3', 'paved',  'Ulan road',        {}],
+  ['J5', 'J9', 'paved',  'N1 East',          {}],
+  ['J7', 'D4', 'gravel', 'Sefa south road',  {}],
+  ['D4', 'J9', 'gravel', 'Sefa east road',   {}],
+  ['J9', 'D5', 'paved',  'Doro road',        {}],
+  ['J9', 'S3', 'gravel', 'Mira road',        {}],
+  ['D5', 'S3', 'gravel', 'Mira–Doro road',   {}],
+  ['D5', 'S4', 'gravel', 'Doro–Tolu road',   {}],
+  ['S4', 'D6', 'gravel', 'Lake road',        {}],
+  ['J7', 'S4', 'gravel', 'Tolu west road',   { flood: 0.25 }],
+  ['S3', 'D6', 'track',  'Mira lake track',  {}],
+  ['D2', 'J10', 'track', 'Nyeri hill track', { conflict: 0.6 }],
+  ['S2', 'J10', 'gravel','Kessa–North Gate', { conflict: 0.8 }],
+  ['J10', 'J8', 'track', 'Northern Pass',    { slide: 0.9 }],
+  ['J8', 'D7', 'gravel', 'Clinic road',      { slide: 0.5 }],
+  ['J8', 'D3', 'gravel', 'Ulan hill road',   { slide: 0.4 }],
+  ['J8', 'S3', 'gravel', 'Pass–Mira road',   { slide: 0.3 }],
+];
+
+const ALERTS = [
+  { id: 'flood',    title: 'Heavy rainfall · Sava basin',            src: 'Met service + river gauge forecast · 140 mm / 72 h, river at 92% bankfull', p: 0.70 },
+  { id: 'slide',    title: 'Landslide warning · Northern highlands', src: 'Geological survey · soil saturation index high', p: 0.45 },
+  { id: 'conflict', title: 'Insecurity · N1 corridor & North Gate',  src: 'Incident feed + field reports · 3 checkpoints reported', p: 0.30 },
+  { id: 'cyclone',  title: 'Tropical storm · Amara coast',           src: 'Regional cyclone centre · track uncertainty wide', p: 0.15 },
+];
+
+const SCENARIOS = [
+  { label: 'Checkpoint on N1 highway', edges: ['J1-J4'], cause: 'security checkpoint', hint: 'detour or switch' },
+  { label: 'Sava river flood',         edges: ['J4-J5', 'J6-J7'], cause: 'flooding', hint: 'switch supplier' },
+  { label: 'Storm: flood + landslide', edges: ['J4-J5', 'J6-J7', 'J10-J8'], cause: 'storm', hint: 'network splits' },
+  { label: 'Port access blocked',      edges: ['S1-J1', 'S1-D1', 'S1-D8'], cause: 'cyclone surge', hint: 'stock limits' },
+];
+
+/* ======================= ENGINE ======================= */
+const N = Object.fromEntries(NODES.map(n => [n.id, n]));
+const SUPPLIERS = NODES.filter(n => n.type === 'supplier');
+const DESTS = NODES.filter(n => n.type === 'dest');
+const PRIORITY = [...DESTS].sort((a, b) => b.ipc - a.ipc || a.days - b.days);
+const EDGES = ROADS.map(([a, b, surface, name, exp]) => {
+  const km = Math.round(Math.hypot(N[a].x - N[b].x, N[a].y - N[b].y) * KM_PER_PX);
+  return { id: `${a}-${b}`, a, b, surface, name, exp, km, hours: km / SPEED[surface] };
+});
+const E = Object.fromEntries(EDGES.map(e => [e.id, e]));
+const ADJ = Object.fromEntries(NODES.map(n => [n.id, []]));
+EDGES.forEach(e => { ADJ[e.a].push(e); ADJ[e.b].push(e); });
+
+// Dijkstra from a destination over open roads (graph is undirected)
+function shortest(src, cut) {
+  const dist = {}, prev = {}, done = {};
+  NODES.forEach(n => dist[n.id] = Infinity);
+  dist[src] = 0;
+  for (;;) {
+    let u = null;
+    for (const id in dist) if (!done[id] && dist[id] < Infinity && (u === null || dist[id] < dist[u])) u = id;
+    if (u === null) break;
+    done[u] = true;
+    for (const e of ADJ[u]) {
+      if (cut.has(e.id)) continue;
+      const v = e.a === u ? e.b : e.a, nd = dist[u] + e.hours;
+      if (nd < dist[v]) { dist[v] = nd; prev[v] = { node: u, edge: e.id }; }
+    }
+  }
+  return { dist, prev };
+}
+// walk prev pointers from supplier back to the destination -> supplier-first path
+function pathOf(sp, from) {
+  const nodes = [from], edges = [];
+  let cur = from;
+  while (sp.prev[cur]) { edges.push(sp.prev[cur].edge); cur = sp.prev[cur].node; nodes.push(cur); }
+  return { nodes, edges };
+}
+function components(cut) {
+  const comp = {}; let k = 0;
+  for (const n of NODES) {
+    if (comp[n.id] !== undefined) continue;
+    const q = [n.id]; comp[n.id] = k;
+    while (q.length) {
+      const u = q.pop();
+      for (const e of ADJ[u]) {
+        if (cut.has(e.id)) continue;
+        const v = e.a === u ? e.b : e.a;
+        if (comp[v] === undefined) { comp[v] = k; q.push(v); }
+      }
+    }
+    k++;
+  }
+  const groups = [];
+  for (let i = 0; i < k; i++) {
+    const members = NODES.filter(n => comp[n.id] === i);
+    if (members.some(m => m.type !== 'junction')) groups.push(members);
+  }
+  return { comp, groups };
+}
+
+let BASE = null;
+function computePlan(cut) {
+  const stock = Object.fromEntries(SUPPLIERS.map(s => [s.id, s.stock]));
+  const plan = {};
+  for (const d of PRIORITY) {
+    const sp = shortest(d.id, cut);
+    const A = d.planned, base = BASE && BASE[d.id];
+    const reachable = SUPPLIERS.filter(s => sp.dist[s.id] < Infinity).sort((a, b) => sp.dist[a.id] - sp.dist[b.id]);
+    const withStock = reachable.filter(s => stock[s.id] >= d.need);
+    const aReach = sp.dist[A] < Infinity, aStock = stock[A] >= d.need;
+    let sup = null, status, reason, pref;
+
+    if (aReach && aStock) {
+      const tA = sp.dist[A], best = withStock[0];
+      if (base && best.id !== A && tA > base.hours * 1.25 && sp.dist[best.id] < tA * 0.8) {
+        sup = best.id; status = 'fallback';
+        reason = `The detour from ${N[A].name} would take ${fh(tA)}, against ${fh(base.hours)} normally. ${N[sup].name} can deliver in ${fh(sp.dist[sup])}, so the supplier is switched.`;
+      } else {
+        sup = A;
+        const same = !base || pathOf(sp, A).edges.join() === base.edges.join();
+        status = same ? 'onplan' : 'rerouted';
+        reason = same ? `Planned route is open. ${N[A].name} delivers in ${fh(tA)}.`
+                      : `Planned route is blocked. The shortest open detour from ${N[A].name} takes ${fh(tA)} (+${fh(tA - base.hours)}).`;
+      }
+      pref = sup;
+    } else if (withStock.length) {
+      sup = withStock[0].id; status = 'fallback';
+      reason = !aReach
+        ? `Network split: ${N[A].name} is in a different subnetwork and no road connects them. The nearest supplier in this subnetwork with enough stock is ${N[sup].name}, ${fh(sp.dist[sup])} away.`
+        : `${N[A].name} has only ${stock[A]} t left after higher-priority deliveries. ${N[sup].name} takes over (${fh(sp.dist[sup])}).`;
+      pref = aReach ? A : reachable[0].id;
+    } else {
+      status = 'isolated';
+      reason = reachable.length
+        ? `Suppliers are reachable but none has ${d.need} t left. Escalate: airlift, or move stock from another subnetwork.`
+        : `No supplier can be reached by road. Escalate: airlift or air drop, or a river barge.`;
+      pref = aReach ? A : (reachable[0] && reachable[0].id);
+    }
+    let path = { nodes: [], edges: [] }, hours = null;
+    if (sup) { stock[sup] -= d.need; path = pathOf(sp, sup); hours = sp.dist[sup]; }
+    plan[d.id] = { dest: d.id, sup, status, reason, hours, path, edges: path.edges, split: !aReach, pref, sp };
+  }
+  return { plan, stockLeft: stock };
+}
+function forecastProb(e, alertP) {
+  let keep = 1 - BASE_RISK[e.surface];
+  for (const k in e.exp) keep *= 1 - (alertP[k] || 0) * e.exp[k];
+  return 1 - keep;
+}
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function simulate(runs) {
+  const rnd = mulberry32(42);
+  const pe = Object.fromEntries(EDGES.map(e => [e.id, state.cut.has(e.id) ? 1 : forecastProb(e, state.alertP)]));
+  const T = Object.fromEntries(DESTS.map(d => [d.id, { onplan: 0, rerouted: 0, fallback: 0, isolated: 0, opts: {}, cutBad: {}, cutOk: {}, bad: 0 }]));
+  const S = Object.fromEntries(SUPPLIERS.map(s => [s.id, { called: 0, load: 0, short: [] }]));
+  let anyDisrupt = 0, splitRuns = 0;
+  for (let r = 0; r < runs; r++) {
+    const cut = new Set(EDGES.filter(e => rnd() < pe[e.id]).map(e => e.id));
+    const { plan } = computePlan(cut);
+    const demand = Object.fromEntries(SUPPLIERS.map(s => [s.id, 0]));
+    const calledThisRun = {};
+    let disrupted = false, split = false;
+    for (const d of DESTS) {
+      const p = plan[d.id], t = T[d.id];
+      t[p.status]++;
+      if (p.status !== 'onplan') { disrupted = true; t.bad++; }
+      if (p.split) split = true;
+      const key = `${p.status}|${p.sup || '-'}|${p.edges.join(',')}`;
+      const o = t.opts[key] || (t.opts[key] = { n: 0, status: p.status, sup: p.sup, hours: p.hours, nodes: p.path.nodes });
+      o.n++;
+      const bucket = p.status === 'onplan' ? t.cutOk : t.cutBad;
+      cut.forEach(id => bucket[id] = (bucket[id] || 0) + 1);
+      if (p.status === 'fallback') { S[p.sup].load += d.need; calledThisRun[p.sup] = 1; }
+      if (p.pref) demand[p.pref] += d.need;
+    }
+    for (const s of SUPPLIERS) { S[s.id].short.push(Math.max(0, demand[s.id] - s.stock)); if (calledThisRun[s.id]) S[s.id].called++; }
+    if (disrupted) anyDisrupt++;
+    if (split) splitRuns++;
+  }
+  return { runs, T, S, pe, anyDisrupt: anyDisrupt / runs, splitRuns: splitRuns / runs };
+}
+
+/* ======================= STATE ======================= */
+const state = {
+  cut: new Set(), selected: 'D3', plan: null, stockLeft: null, sim: null, log: [],
+  alertP: Object.fromEntries(ALERTS.map(a => [a.id, a.p])),
+  views: { corr: false, out: false },
+};
+
+/* ======================= HELPERS ======================= */
+const $ = s => document.querySelector(s);
+const fh = h => h == null ? '—' : `${h.toFixed(1)} h`;
+const pct = x => `${Math.round(x * 100)}%`;
+const fmt = n => n.toLocaleString('en-US');
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const STATUS = {
+  onplan:   { label: 'On plan',           icon: '✓', color: 'var(--good)',    fg: '#fff' },
+  rerouted: { label: 'Rerouted',          icon: '↻', color: 'var(--warn)',    fg: '#0b0b0b' },
+  fallback: { label: 'Fallback supplier', icon: '⇄', color: 'var(--serious)', fg: '#0b0b0b' },
+  isolated: { label: 'Unreachable',       icon: '✕', color: 'var(--crit)',    fg: '#fff' },
+};
+const chip = st => `<span class="chip"><i style="background:${STATUS[st].color};color:${STATUS[st].fg}">${STATUS[st].icon}</i>${STATUS[st].label}</span>`;
+const roadLabel = e => `${e.name} (${N[e.a].name} – ${N[e.b].name})`;
+const via = nodes => nodes.map(id => N[id].name).join(' → ');
+const now = () => new Date().toTimeString().slice(0, 5);
+
+/* ======================= RENDER ======================= */
+function recompute() {
+  const r = computePlan(state.cut);
+  state.plan = r.plan; state.stockLeft = r.stockLeft;
+}
+
+function renderTiles() {
+  const P = Object.values(state.plan);
+  const total = DESTS.reduce((s, d) => s + d.pop, 0);
+  const reached = DESTS.filter(d => state.plan[d.id].status !== 'isolated').reduce((s, d) => s + d.pop, 0);
+  const cnt = st => P.filter(p => p.status === st).length;
+  const groups = components(state.cut).groups.length;
+  const sim = state.sim;
+  $('#tiles').innerHTML = `
+    <div class="tile"><div class="k">People with food en route</div><div class="v">${fmt(reached)}</div><div class="s">of ${fmt(total)} in ${DESTS.length} communities</div></div>
+    <div class="tile"><div class="k">Deliveries on plan</div><div class="v">${cnt('onplan')} / ${DESTS.length}</div><div class="s">${cnt('rerouted')} rerouted · ${cnt('fallback')} switched supplier · ${cnt('isolated')} unreachable</div></div>
+    <div class="tile"><div class="k">Network state</div><div class="v">${groups > 1 ? `Split · ${groups} parts` : 'Connected'}</div><div class="s">${state.cut.size} road${state.cut.size === 1 ? '' : 's'} closed</div></div>
+    <div class="tile"><div class="k">Chance of disruption · 72 h</div><div class="v">${sim ? pct(sim.anyDisrupt) : '—'}</div><div class="s">${sim ? `network splits in ${pct(sim.splitRuns)} of simulated futures` : 'run the forecast'}</div></div>`;
+}
+
+function renderBanner() {
+  const { groups } = components(state.cut);
+  const P = Object.values(state.plan);
+  const changed = P.filter(p => p.status !== 'onplan');
+  let html;
+  if (!state.cut.size) html = `${chip('onplan')}<span><b>All roads open.</b> All ${DESTS.length} deliveries are running on their planned routes. Fallback plans for the next 72 h are ready below.</span>`;
+  else if (groups.length > 1) {
+    const parts = groups.map((g, i) => `<b>${String.fromCharCode(65 + i)}</b>: ${g.filter(n => n.type === 'supplier').map(n => n.name).join(', ') || 'no supplier'}`).join(' · ');
+    html = `<span class="chip"><i style="background:var(--crit);color:#fff">✕</i>Network split</span><span><b>The network has split into ${groups.length} subnetworks.</b> Rerouting cannot cross the gap, so each destination is served from inside its own subnetwork. ${parts}</span>`;
+  } else html = `${chip(changed.some(p => p.status === 'fallback') ? 'fallback' : 'rerouted')}<span><b>${state.cut.size} road${state.cut.size > 1 ? 's' : ''} closed. The network is still connected.</b> ${changed.length} deliver${changed.length === 1 ? 'y' : 'ies'} adjusted.</span>`;
+  $('#banner').innerHTML = html;
+}
+
+function hull(pts) {
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of p.slice().reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+
+function renderMap() {
+  const out = [];
+  // terrain (decorative, not data)
+  out.push(`<rect width="1000" height="600" fill="var(--surface)"/>`);
+  out.push(`<path d="M0 0 H52 C38 90 60 170 44 260 C30 350 58 430 40 520 L34 600 H0 Z" fill="var(--sea)"/>`);
+  out.push(`<text x="18" y="560" font-size="11" fill="var(--muted)" transform="rotate(-90 18 560)">Amara Sea</text>`);
+  out.push(`<ellipse cx="730" cy="110" rx="210" ry="80" fill="var(--hill)"/><text x="610" y="48" font-size="11" fill="var(--muted)">Northern Highlands</text>`);
+  out.push(`<path d="M540 0 C535 80 510 160 522 230 C534 300 512 380 518 450 C524 520 560 560 552 600" fill="none" stroke="var(--river)" stroke-width="9" stroke-linecap="round"/>`);
+  out.push(`<text x="532" y="560" font-size="11" fill="var(--muted)" transform="rotate(-80 532 560)">Sava River</text>`);
+  out.push(`<ellipse cx="965" cy="575" rx="70" ry="38" fill="var(--sea)"/>`);
+
+  // subnetwork hulls when split
+  const { groups } = components(state.cut);
+  if (groups.length > 1) groups.forEach((g, i) => {
+    const h = hull(g.map(n => [n.x, n.y]));
+    const d = h.length === 1 ? `M${h[0][0]} ${h[0][1]} l0.1 0` : 'M' + h.map(p => p.join(' ')).join(' L') + (h.length > 2 ? ' Z' : '');
+    out.push(`<path d="${d}" fill="var(--hull)" stroke="var(--hull)" stroke-width="56" stroke-linejoin="round" stroke-linecap="round" opacity="0.06"/>`);
+    const minY = Math.min(...g.map(n => n.y)), cx = g.reduce((s, n) => s + n.x, 0) / g.length;
+    out.push(`<text x="${cx}" y="${Math.max(16, minY - 34)}" text-anchor="middle" font-size="12" font-weight="650" fill="var(--ink)" paint-order="stroke" stroke="var(--surface)" stroke-width="4">Subnetwork ${String.fromCharCode(65 + i)}</text>`);
+  });
+
+  // roads
+  const fp = Object.fromEntries(EDGES.map(e => [e.id, forecastProb(e, state.alertP)]));
+  for (const e of EDGES) {
+    const a = N[e.a], b = N[e.b], cut = state.cut.has(e.id), p = fp[e.id];
+    if (!cut && p >= 0.2) out.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${p >= 0.5 ? 'var(--serious)' : 'var(--warn)'}" stroke-width="9" stroke-linecap="round" opacity="0.45"/>`);
+    const w = { paved: 3, gravel: 2, track: 1.5 }[e.surface];
+    const dash = e.surface === 'track' ? 'stroke-dasharray="2 4"' : '';
+    if (cut) out.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="var(--crit)" stroke-width="2.5" stroke-dasharray="6 5"/>`);
+    else out.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="var(--road)" stroke-width="${w}" ${dash} stroke-linecap="round"/>`);
+  }
+  // active routes
+  const sel = state.selected;
+  for (const d of DESTS) {
+    const p = state.plan[d.id];
+    if (!p.sup || d.id === sel) continue;
+    const pts = p.path.nodes.map(id => `${N[id].x},${N[id].y}`).join(' ');
+    const fb = p.status === 'fallback';
+    out.push(`<polyline points="${pts}" fill="none" stroke="${fb ? 'var(--s3)' : 'var(--s1)'}" stroke-width="2.5" ${fb ? 'stroke-dasharray="9 4"' : ''} stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>`);
+  }
+  if (sel && N[sel].type === 'dest') {
+    const p = state.plan[sel], b = BASE[sel];
+    if (p.edges.join() !== b.edges.join()) {
+      const bp = b.path.nodes.map(id => `${N[id].x},${N[id].y}`).join(' ');
+      out.push(`<polyline points="${bp}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 4" stroke-linejoin="round"/>`);
+    }
+    if (p.sup) {
+      const pts = p.path.nodes.map(id => `${N[id].x},${N[id].y}`).join(' ');
+      const fb = p.status === 'fallback';
+      out.push(`<polyline points="${pts}" fill="none" stroke="var(--surface)" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>`);
+      out.push(`<polyline points="${pts}" fill="none" stroke="${fb ? 'var(--s3)' : 'var(--s1)'}" stroke-width="5" ${fb ? 'stroke-dasharray="12 5"' : ''} stroke-linejoin="round" stroke-linecap="round"/>`);
+    }
+  }
+  // cut markers + road hit targets
+  for (const e of EDGES) {
+    const a = N[e.a], b = N[e.b], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    if (state.cut.has(e.id)) out.push(`<g><circle cx="${mx}" cy="${my}" r="9" fill="var(--crit)" stroke="var(--surface)" stroke-width="2"/><path d="M${mx - 3.5} ${my - 3.5} l7 7 M${mx + 3.5} ${my - 3.5} l-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`);
+    const tip = `<b>${esc(e.name)}</b><div class="muted">${esc(N[e.a].name)} – ${esc(N[e.b].name)}</div>
+      <div class="r"><span>Surface</span><span>${e.surface}</span></div><div class="r"><span>Distance</span><span>${e.km} km</span></div>
+      <div class="r"><span>Travel time</span><span>${fh(e.hours)}</span></div><div class="r"><span>Failure risk 72 h</span><span>${pct(fp[e.id])}</span></div>
+      <div class="r"><span>Status</span><span>${state.cut.has(e.id) ? '✕ Closed' : 'Open'}</span></div><div class="muted" style="margin-top:4px">Click to ${state.cut.has(e.id) ? 'reopen' : 'close'} this road</div>`;
+    out.push(`<line class="hit" data-edge="${e.id}" data-tip="${esc(tip)}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="transparent" stroke-width="16"/>`);
+  }
+  // nodes
+  for (const n of NODES) {
+    const isSel = n.id === sel;
+    let shape = '', tip = '';
+    if (n.type === 'junction') {
+      shape = `<circle cx="${n.x}" cy="${n.y}" r="4" fill="var(--muted)" stroke="var(--surface)" stroke-width="2"/>`;
+      if (n.show) { const [dx, dy, an] = n.lab; shape += `<text x="${n.x + dx}" y="${n.y + dy}" text-anchor="${an}" font-size="10.5" fill="var(--muted)" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${n.name}</text>`; }
+      tip = `<b>${n.name}</b><div class="muted">Junction</div>`;
+    } else if (n.type === 'supplier') {
+      const left = state.stockLeft[n.id];
+      shape = `<rect x="${n.x - 10}" y="${n.y - 10}" width="20" height="20" rx="4" fill="var(--ink)" stroke="${isSel ? 'var(--s1)' : 'var(--surface)'}" stroke-width="${isSel ? 3 : 2}"/>
+        <path d="M${n.x - 5} ${n.y + 4} v-5 l5 -4 l5 4 v5 z" fill="var(--surface)"/>`;
+      const [dx, dy, an] = n.lab;
+      shape += `<text x="${n.x + dx}" y="${n.y + dy}" text-anchor="${an}" font-size="12" font-weight="600" fill="var(--ink)" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${n.name}</text>
+        <text x="${n.x + dx}" y="${n.y + dy + 13}" text-anchor="${an}" font-size="10.5" fill="var(--ink-2)" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${left} of ${n.stock} t free</text>`;
+      tip = `<b>${n.name}</b><div class="muted">Supplier</div><div class="r"><span>Stock</span><span>${n.stock} t</span></div><div class="r"><span>Free after this cycle</span><span>${left} t</span></div>`;
+    } else {
+      const p = state.plan[n.id], st = STATUS[p.status];
+      const r = 6 + Math.sqrt(n.pop) / 18;
+      const [dx, dy, an] = n.lab || [r + 6, 4, 'start'];
+      shape = `<circle cx="${n.x}" cy="${n.y}" r="${r}" fill="var(--s2)" stroke="${isSel ? 'var(--ink)' : 'var(--surface)'}" stroke-width="${isSel ? 3 : 2}"/>
+        <circle cx="${n.x + r * .75}" cy="${n.y - r * .75}" r="7" fill="${st.color}" stroke="var(--surface)" stroke-width="1.5"/>
+        <text x="${n.x + r * .75}" y="${n.y - r * .75 + 3.5}" text-anchor="middle" font-size="9" font-weight="700" fill="${st.fg}">${st.icon}</text>
+        <text x="${n.x + dx}" y="${n.y + dy}" text-anchor="${an}" font-size="12" font-weight="600" fill="var(--ink)" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${n.name}</text>`;
+      tip = `<b>${n.name}</b><div class="muted">${fmt(n.pop)} people · IPC phase ${n.ipc}</div>
+        <div class="r"><span>Need this cycle</span><span>${n.need} t</span></div><div class="r"><span>Days of food left</span><span>${n.days}</span></div>
+        <div class="r"><span>Supplier</span><span>${p.sup ? N[p.sup].name : '—'}</span></div><div class="r"><span>ETA</span><span>${fh(p.hours)}</span></div>
+        <div style="margin-top:4px">${chip(p.status)}</div>`;
+    }
+    out.push(`<g>${shape}<circle class="hit" data-node="${n.id}" data-tip="${esc(tip)}" cx="${n.x}" cy="${n.y}" r="18" fill="transparent"/></g>`);
+  }
+  $('#map').innerHTML = out.join('');
+}
+
+function renderMapLegend() {
+  const sw = (inner) => `<svg viewBox="0 0 26 14">${inner}</svg>`;
+  $('#mapLegend').innerHTML = [
+    `<span>${sw('<rect x="7" y="1" width="12" height="12" rx="3" fill="var(--ink)"/>')}Supplier (stock)</span>`,
+    `<span>${sw('<circle cx="13" cy="7" r="6" fill="var(--s2)"/>')}Destination (size = people)</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--s1)" stroke-width="4"/>')}Route from planned supplier</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--s3)" stroke-width="4" stroke-dasharray="7 3"/>')}Route from fallback supplier</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>')}Original route</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--warn)" stroke-width="8" opacity=".45"/><line x1="1" y1="7" x2="25" y2="7" stroke="var(--road)" stroke-width="2"/>')}Risk 20–50%</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--serious)" stroke-width="8" opacity=".45"/><line x1="1" y1="7" x2="25" y2="7" stroke="var(--road)" stroke-width="2"/>')}Risk ≥ 50%</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--crit)" stroke-width="2.5" stroke-dasharray="5 4"/><circle cx="13" cy="7" r="5" fill="var(--crit)"/>')}✕ Road closed</span>`,
+    `<span>${sw('<line x1="1" y1="7" x2="25" y2="7" stroke="var(--road)" stroke-width="3"/>')}Paved / gravel / <span style="opacity:.8">track (dotted)</span></span>`,
+  ].join('');
+}
+
+function renderDetail() {
+  const id = state.selected, n = N[id];
+  if (n.type === 'supplier') {
+    const served = DESTS.filter(d => state.plan[d.id].sup === id);
+    $('#detail').innerHTML = `<div class="card-head"><h3>${n.name}</h3><span class="sp muted" style="font-size:12px">Supplier</span></div>
+      <dl><dt>Stock</dt><dd>${n.stock} t</dd><dt>Free after cycle</dt><dd>${state.stockLeft[id]} t</dd><dt>Serving</dt><dd>${served.map(d => d.name).join(', ') || '—'}</dd></dl>`;
+    return;
+  }
+  if (n.type !== 'dest') return;
+  const p = state.plan[id], b = BASE[id];
+  const alts = SUPPLIERS.map(s => ({ s, t: p.sp.dist[s.id] })).sort((x, y) => x.t - y.t);
+  $('#detail').innerHTML = `
+    <div class="card-head"><h3>${n.name}</h3><span class="sp">${chip(p.status)}</span></div>
+    <dl>
+      <dt>People</dt><dd>${fmt(n.pop)} · IPC phase ${n.ipc}</dd>
+      <dt>Need</dt><dd>${n.need} t · ${n.days} days of food left</dd>
+      <dt>Plan A</dt><dd>${N[n.planned].name} · ${fh(b.hours)}</dd>
+      <dt>Now</dt><dd>${p.sup ? `${N[p.sup].name} · ${fh(p.hours)}` : 'No road supply'}${p.sup && p.hours > b.hours ? ` <span class="muted">(+${fh(p.hours - b.hours)})</span>` : ''}</dd>
+      <dt>Route</dt><dd class="route">${p.sup ? via(p.path.nodes) : '—'}</dd>
+    </dl>
+    <div class="reason">${p.reason}</div>
+    <div class="alts"><div style="border:0;color:var(--ink-2);font-size:12px"><span>All suppliers, by travel time from here</span></div>
+      ${alts.map(a => `<div><span>${a.s.id === p.sup ? '●' : '○'}</span><span>${a.s.name}</span><span>${a.t < Infinity ? fh(a.t) : 'no road · other subnetwork'}</span></div>`).join('')}
+    </div>`;
+}
+
+function renderDispatch() {
+  const rows = PRIORITY.map(d => {
+    const p = state.plan[d.id], b = BASE[d.id];
+    const delta = p.hours != null ? p.hours - b.hours : null;
+    return `<tr data-node="${d.id}" class="${d.id === state.selected ? 'sel' : ''}">
+      <td><b>${d.name}</b><div class="muted" style="font-size:12px">${d.days} days of food left</div></td>
+      <td class="num">${fmt(d.pop)}</td><td class="num">${d.ipc}</td><td class="num">${d.need}</td>
+      <td>${p.sup ? N[p.sup].name : '—'}${p.sup && p.sup !== d.planned ? `<div class="muted" style="font-size:12px">planned: ${N[d.planned].name}</div>` : ''}</td>
+      <td class="route">${p.sup ? via(p.path.nodes) : '—'}</td>
+      <td class="num">${fh(p.hours)}${delta > 0.05 ? `<div class="muted" style="font-size:12px">+${fh(delta)}</div>` : ''}</td>
+      <td>${chip(p.status)}</td></tr>`;
+  }).join('');
+  $('#dispatch').innerHTML = `<thead><tr><th>Destination</th><th class="num">People</th><th class="num">IPC</th><th class="num">Need (t)</th><th>Supplier</th><th>Route</th><th class="num">ETA</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+function renderLog() {
+  $('#log').innerHTML = state.log.slice().reverse().map(l => `<div><time>${l.t}</time>${l.m}</div>`).join('');
+}
+function log(m) { state.log.push({ t: now(), m }); }
+
+function renderTower() { renderTiles(); renderBanner(); renderMap(); renderDetail(); renderDispatch(); renderLog(); }
+
+function applyCuts(next, cause) {
+  const old = state.plan, oldGroups = components(state.cut).groups.length;
+  const closed = [...next].filter(id => !state.cut.has(id)), opened = [...state.cut].filter(id => !next.has(id));
+  state.cut = next; recompute();
+  closed.forEach(id => log(`<b>Closed:</b> ${E[id].name}${cause ? ` (${cause})` : ''}.`));
+  opened.forEach(id => log(`<b>Reopened:</b> ${E[id].name}.`));
+  const g = components(state.cut).groups.length;
+  if (g !== oldGroups) log(g > 1 ? `<b>Network split into ${g} subnetworks.</b> Fallback suppliers are now assigned inside each subnetwork.` : `<b>Network reconnected.</b>`);
+  for (const d of PRIORITY) {
+    const a = old[d.id], b = state.plan[d.id];
+    if (a.sup !== b.sup || a.status !== b.status || a.edges.join() !== b.edges.join())
+      log(`${d.name}: ${a.sup ? N[a.sup].name : 'none'} → <b>${b.sup ? N[b.sup].name : 'no supplier'}</b>, ${STATUS[b.status].label.toLowerCase()}${b.hours != null ? `, ETA ${fh(b.hours)}` : ''}.`);
+  }
+  renderTower();
+  scheduleSim();
+}
+
+/* ---------- forecast ---------- */
+function renderAlerts() {
+  $('#alerts').innerHTML = ALERTS.map(a => `<div class="alert">
+    <div class="t"><b>${a.title}</b><span id="ap-${a.id}">${pct(state.alertP[a.id])}</span></div>
+    <div class="src">${a.src}</div>
+    <input type="range" min="0" max="100" value="${Math.round(state.alertP[a.id] * 100)}" data-alert="${a.id}" aria-label="${a.title} probability">
+  </div>`).join('');
+}
+
+function renderCorridors() {
+  const list = EDGES.filter(e => !state.cut.has(e.id)).map(e => ({ e, p: forecastProb(e, state.alertP) })).sort((a, b) => b.p - a.p).slice(0, 8);
+  const max = Math.max(0.1, Math.ceil(list[0].p * 10) / 10);
+  $('#corrChart').innerHTML = list.map(({ e, p }) => {
+    const drivers = Object.entries(e.exp).map(([k, x]) => `<div class="r"><span>${ALERTS.find(a => a.id === k).title.split(' · ')[0]}</span><span>${pct(x)} exposure × ${pct(state.alertP[k])}</span></div>`).join('');
+    const tip = `<b>${esc(e.name)}</b><div class="muted">${esc(N[e.a].name)} – ${esc(N[e.b].name)}</div><div class="r"><span>Failure probability</span><span>${pct(p)}</span></div>${drivers}<div class="r"><span>Baseline (${e.surface})</span><span>${pct(BASE_RISK[e.surface])}</span></div>`;
+    return `<div class="row" data-tip="${esc(tip)}"><div class="name">${e.name}</div><div class="track"><div class="bar" style="width:${p / max * 100}%"></div></div><div class="val">${pct(p)}</div></div>`;
+  }).join('') + `<div class="axis"><div></div><div><span>0%</span><span>${pct(max / 2)}</span><span>${pct(max)}</span></div><div></div></div>`;
+  $('#corrTable').innerHTML = `<table><thead><tr><th>Road</th><th>Between</th><th class="num">Failure probability</th></tr></thead><tbody>${list.map(({ e, p }) => `<tr><td>${e.name}</td><td>${N[e.a].name} – ${N[e.b].name}</td><td class="num">${pct(p)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+const ORDER = ['onplan', 'rerouted', 'fallback', 'isolated'];
+function renderOutcomes() {
+  const sim = state.sim; if (!sim) return;
+  $('#outLegend').innerHTML = ORDER.map(s => `<span>${chip(s)}</span>`).join('') + `<span class="muted">Right column: chance a fallback supplier is needed or the community is unreachable</span>`;
+  $('#outChart').innerHTML = PRIORITY.map(d => {
+    const t = sim.T[d.id];
+    const segs = ORDER.filter(s => t[s] > 0).map(s => {
+      const share = t[s] / sim.runs;
+      const tip = `<b>${d.name}</b><div class="r"><span>${STATUS[s].icon} ${STATUS[s].label}</span><span>${pct(share)}</span></div><div class="muted">${fmt(t[s])} of ${fmt(sim.runs)} simulated futures</div>`;
+      return `<div style="flex:${share} 0 0;background:${STATUS[s].color};min-width:3px" data-tip="${esc(tip)}"></div>`;
+    }).join('');
+    const risk = (t.fallback + t.isolated) / sim.runs;
+    return `<div class="row"><div class="name">${d.name}</div><div class="segs">${segs}</div><div class="val">${pct(risk)}</div></div>`;
+  }).join('') + `<div class="axis"><div></div><div><span>0%</span><span>50%</span><span>100%</span></div><div></div></div>`;
+  $('#outTable').innerHTML = `<table><thead><tr><th>Destination</th>${ORDER.map(s => `<th class="num">${STATUS[s].label}</th>`).join('')}</tr></thead><tbody>${PRIORITY.map(d => `<tr><td>${d.name}</td>${ORDER.map(s => `<td class="num">${pct(sim.T[d.id][s] / sim.runs)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  $('#simMeta').textContent = `${fmt(sim.runs)} futures simulated · disruption somewhere in ${pct(sim.anyDisrupt)} · network split in ${pct(sim.splitRuns)}`;
+}
+
+function renderPlaybook() {
+  const sim = state.sim; if (!sim) return;
+  // pre-positioning
+  const committed = Object.fromEntries(SUPPLIERS.map(s => [s.id, DESTS.filter(d => BASE[d.id].sup === s.id).reduce((x, d) => x + d.need, 0)]));
+  $('#prestage').innerHTML = `<thead><tr><th>Supplier</th><th class="num">Stock</th><th class="num">Committed (Plan A)</th><th class="num">P(used as fallback)</th><th class="num">Expected fallback load</th><th class="num">Shortfall, 90th pct.</th><th>Recommendation</th></tr></thead><tbody>${
+    SUPPLIERS.map(s => {
+      const x = sim.S[s.id], sorted = [...x.short].sort((a, b) => a - b), p90 = sorted[Math.floor(sorted.length * 0.9)];
+      const called = x.called / sim.runs, load = x.load / sim.runs;
+      const rec = p90 > 0 ? `<b>Pre-position +${Math.ceil(p90 / 5) * 5} t now</b> <span class="muted">so fallback demand can be met</span>`
+        : called > 0.2 ? `Keep ${Math.ceil(load / 5) * 5} t reserve uncommitted` : `<span class="muted">No action</span>`;
+      return `<tr><td><b>${s.name}</b></td><td class="num">${s.stock} t</td><td class="num">${committed[s.id]} t</td><td class="num">${pct(called)}</td><td class="num">${load.toFixed(1)} t</td><td class="num">${p90} t</td><td>${rec}</td></tr>`;
+    }).join('')}</tbody>`;
+  // contingency per destination
+  $('#plays').innerHTML = `<thead><tr><th>Destination</th><th>Plan A</th><th class="num">P(Plan A holds)</th><th>Most likely contingency</th><th>Main trigger</th><th>Ready action</th></tr></thead><tbody>${
+    PRIORITY.map(d => {
+      const t = sim.T[d.id], b = BASE[d.id];
+      const holds = t.onplan / sim.runs;
+      const opts = Object.values(t.opts).filter(o => o.status !== 'onplan').sort((a, c) => c.n - a.n);
+      const top = opts[0];
+      let trig = '—';
+      if (t.bad > 0) {
+        const ok = sim.runs - t.bad;
+        const best = EDGES.map(e => ({ e, lift: (t.cutBad[e.id] || 0) / t.bad - (ok ? (t.cutOk[e.id] || 0) / ok : 0) })).sort((a, c) => c.lift - a.lift)[0];
+        if (best && best.lift > 0.05) trig = `${best.e.name} closes`;
+      }
+      const cont = top ? `${chip(top.status)} <span class="muted">${pct(top.n / sim.runs)}</span><div class="route">${top.sup ? `${N[top.sup].name} · ${fh(top.hours)} · via ${via(top.nodes.slice(1, -1).filter(id => N[id].type !== 'junction' || N[id].show)) || 'direct'}` : 'no road supply'}</div>` : '<span class="muted">none expected</span>';
+      const act = !top ? '<span class="muted">Monitor</span>'
+        : top.status === 'isolated' ? 'Pre-book airlift slot; pre-stock buffer at site'
+        : top.status === 'fallback' ? `Reserve ${d.need} t at ${N[top.sup].name}; pre-assign truck`
+        : 'Brief drivers on detour; no stock change';
+      return `<tr><td><b>${d.name}</b><div class="muted" style="font-size:12px">IPC ${d.ipc} · ${fmt(d.pop)} people</div></td><td>${N[d.planned].name}<div class="route">${fh(b.hours)}</div></td><td class="num">${pct(holds)}</td><td>${cont}</td><td>${trig}</td><td>${act}</td></tr>`;
+    }).join('')}</tbody>`;
+}
+
+function runSim() {
+  state.sim = simulate(2000);
+  renderOutcomes(); renderPlaybook(); renderTiles();
+}
+let simTimer = null;
+function scheduleSim() { clearTimeout(simTimer); simTimer = setTimeout(runSim, 120); }
+
+/* ======================= EVENTS ======================= */
+const tipEl = $('#tip');
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-tip]');
+  if (!el) { tipEl.style.display = 'none'; return; }
+  tipEl.innerHTML = el.getAttribute('data-tip'); tipEl.style.display = 'block';
+});
+document.addEventListener('mousemove', e => {
+  if (tipEl.style.display !== 'block') return;
+  const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+});
+document.addEventListener('scroll', () => tipEl.style.display = 'none', { passive: true });
+
+$('#map').addEventListener('click', e => {
+  const t = e.target;
+  if (t.dataset.edge) {
+    const next = new Set(state.cut);
+    next.has(t.dataset.edge) ? next.delete(t.dataset.edge) : next.add(t.dataset.edge);
+    tipEl.style.display = 'none';
+    applyCuts(next, 'field report');
+  } else if (t.dataset.node) { state.selected = t.dataset.node; renderTower(); }
+});
+$('#dispatch').addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-node]'); if (!tr) return;
+  state.selected = tr.dataset.node; renderTower();
+  $('#tower').scrollIntoView({ behavior: 'smooth' });
+});
+
+const scen = $('#scenarios');
+SCENARIOS.forEach(s => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.type = 'button';
+  b.innerHTML = `${s.label} <span class="muted" style="font-size:11px">· ${s.hint}</span>`;
+  b.onclick = () => {
+    log(`<b>Scenario:</b> ${s.label}.`);
+    applyCuts(new Set(s.edges), s.cause);
+    const focus = { 'Checkpoint on N1 highway': 'D4', 'Sava river flood': 'D3', 'Storm: flood + landslide': 'D7', 'Port access blocked': 'D6' }[s.label];
+    if (focus) { state.selected = focus; renderTower(); }
+  };
+  scen.appendChild(b);
+});
+const reset = document.createElement('button');
+reset.className = 'btn'; reset.type = 'button'; reset.textContent = 'Reopen all roads';
+reset.onclick = () => applyCuts(new Set(), null);
+scen.appendChild(reset);
+
+$('#alerts').addEventListener('input', e => {
+  const id = e.target.dataset.alert; if (!id) return;
+  state.alertP[id] = e.target.value / 100;
+  $(`#ap-${id}`).textContent = pct(state.alertP[id]);
+  renderCorridors(); renderMap(); scheduleSim();
+});
+$('#runSim').onclick = runSim;
+$('#applyLikely').onclick = () => {
+  const likely = EDGES.filter(e => forecastProb(e, state.alertP) >= 0.5).map(e => e.id);
+  log(`<b>Forecast applied:</b> closing the ${likely.length} road${likely.length === 1 ? '' : 's'} with failure risk of 50% or more.`);
+  applyCuts(new Set([...state.cut, ...likely]), 'forecast');
+  $('#tower').scrollIntoView({ behavior: 'smooth' });
+};
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+  const k = b.dataset.view, on = !state.views[k];
+  state.views[k] = on; b.setAttribute('aria-pressed', on); b.textContent = on ? 'Chart' : 'Table';
+  $(`#${k}Chart`).classList.toggle('hidden', on); $(`#${k}Table`).classList.toggle('hidden', !on);
+  if (k === 'out') $('#outLegend').classList.toggle('hidden', on);
+});
+
+// theme
+const root = document.documentElement;
+const qs = new URLSearchParams(location.search).get('theme');
+if (qs) root.dataset.theme = qs;
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+const syncThemeBtn = () => $('#themeBtn').textContent = isDark() ? 'Light mode' : 'Dark mode';
+$('#themeBtn').onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; syncThemeBtn(); };
+syncThemeBtn();
+
+/* ======================= BOOT ======================= */
+BASE = computePlan(new Set()).plan;
+recompute();
+log(`System online. ${DESTS.length} deliveries planned. Fallback plans are precomputed from the live hazard feed.`);
+renderMapLegend(); renderAlerts(); renderCorridors(); renderTower(); runSim();
+// ?scenario=1..4 opens the control tower with that scenario applied (handy for presenting)
+const scParam = +new URLSearchParams(location.search).get('scenario');
+if (scParam && scen.children[scParam]) scen.children[scParam].click();
+</script>
+</body>
+</html>
