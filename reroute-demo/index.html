@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Njia Logistics — Lifeline Engine · Food gets through when roads don't</title>
+<style>
+:root{
+  --bg:#070c17; --bg-2:#0b1220; --surface:#0f1729; --surface-2:#131d33; --surface-3:#1b2642;
+  --border:rgba(255,255,255,.08); --border-2:rgba(255,255,255,.16);
+  --text:#eef2f8; --text-2:#b9c3d4; --muted:#7f8aa0;
+  --brand:#2dd4bf; --brand-ink:#04211d;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70;
+  --map:#0b1426;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.wrap.wide{max-width:1600px}
+section{padding:96px 0;scroll-margin-top:64px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700}
+h1{font-size:clamp(32px,3.3vw,48px);line-height:1.04;letter-spacing:-.025em;font-weight:800}
+h2{font-size:clamp(28px,3.2vw,42px);line-height:1.1;letter-spacing:-.02em;font-weight:760;margin:10px 0 14px}
+h3{font-size:17px;font-weight:700;letter-spacing:-.005em}
+.lead{font-size:18px;color:var(--text-2);max-width:680px}
+.muted{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:10px;font-weight:650;font-size:14.5px;transition:.15s;white-space:nowrap}
+.btn-primary{background:var(--brand);color:var(--brand-ink)}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-ghost{border:1px solid var(--border-2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.05)}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:8px}
+.btn[disabled]{opacity:.6;cursor:progress}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:rgba(7,12,23,.8);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav .wrap{display:flex;align-items:center;height:64px;gap:28px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.01em}
+.logo small{font-weight:500;color:var(--muted);font-size:13px}
+.nav-links{display:flex;gap:24px;font-size:14px;color:var(--text-2);margin-left:8px}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{margin-left:auto;display:flex;gap:10px}
+
+/* hero */
+.hero{padding:76px 0 40px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;right:-240px;top:-260px;width:900px;height:900px;background:radial-gradient(circle,rgba(45,212,191,.13),transparent 62%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:center;position:relative}
+.hero .lead{margin:22px 0 30px}
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap}
+.hero-trust{margin-top:28px;display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.hero-trust span::before{content:"✓ ";color:var(--brand);font-weight:700}
+.hero-card{background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--border);border-radius:20px;padding:16px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.hero-card-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);padding:2px 4px 10px}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px;box-shadow:0 0 0 0 rgba(12,163,12,.6);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(12,163,12,0)}100%{box-shadow:0 0 0 0 rgba(12,163,12,0)}}
+#hero-svg{width:100%;height:auto;display:block;background:var(--map);border-radius:12px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.hero-stats div{background:var(--surface-3);border-radius:10px;padding:10px 12px}
+.hero-stats b{display:block;font-size:20px;font-weight:700}
+.hero-stats span{font-size:11.5px;color:var(--muted)}
+
+.facts{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-2);padding:26px 0}
+.facts .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.fact b{font-size:28px;font-weight:760;letter-spacing:-.02em;display:block}
+.fact span{font-size:13.5px;color:var(--text-2)}
+.fact cite{display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:4px}
+
+/* concept */
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.tier-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px}
+.tier-card svg{width:100%;height:auto;background:var(--map);border-radius:12px;margin-bottom:16px}
+.tier-card .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--surface-3);margin-bottom:10px}
+.tier-card .tag i{font-style:normal;width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;color:#0b1426}
+.tier-card p{color:var(--text-2);font-size:14.5px;margin-top:6px}
+.tier-card code{font-size:12px;color:var(--brand);background:rgba(45,212,191,.08);padding:1px 6px;border-radius:5px}
+
+/* control tower */
+.ct{background:linear-gradient(180deg,var(--bg-2),var(--bg));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:72px 0}
+.ct-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap}
+.ct-head .lead{font-size:16px}
+.ct-clock{font-size:13px;color:var(--muted);text-align:right}
+.ct-clock b{color:var(--text);font-weight:650}
+.ct-grid{display:grid;grid-template-columns:300px minmax(0,1fr) 340px;gap:16px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px}
+.panel + .panel{margin-top:16px}
+.panel h4{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.panel h4 small{letter-spacing:0;text-transform:none;font-weight:500;font-size:11.5px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-3);border-radius:9px;padding:3px;gap:3px;margin-bottom:12px}
+.seg button{padding:7px 0;border-radius:7px;font-size:12.5px;font-weight:650;color:var(--text-2)}
+.seg button.on{background:var(--text);color:#0b1220}
+.alert{display:grid;grid-template-columns:30px 1fr auto;gap:4px 10px;align-items:start;padding:9px 10px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;transition:.15s}
+.alert.off{opacity:.45}
+.al-ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.al-ico svg{width:17px;height:17px}
+.al-title{font-size:13px;font-weight:650;line-height:1.3}
+.al-src{font-size:11.5px;color:var(--muted);margin-top:2px}
+.al-spark{display:flex;align-items:flex-end;gap:3px;height:18px;margin-top:6px}
+.al-spark i{width:24px;border-radius:3px 3px 0 0;background:var(--surface-3);position:relative}
+.al-spark i.cur{background:var(--c)}
+.al-spark-l{display:flex;gap:3px;font-size:9.5px;color:var(--muted)}
+.al-spark-l span{width:24px;text-align:center}
+.al-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.al-p{font-size:15px;font-weight:700}
+.switch{position:relative;width:32px;height:18px;display:inline-block}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;border-radius:99px;background:var(--surface-3);transition:.15s;cursor:pointer}
+.switch span::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#8792a8;transition:.15s}
+.switch input:checked + span{background:var(--brand)}
+.switch input:checked + span::after{transform:translateX(14px);background:#fff}
+.stack{display:grid;gap:8px}
+.scen-bar{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:8px;margin-top:12px}
+.scen-bar .scen b{font-size:12.5px}
+.under{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:4px}
+.under .layers{display:flex;flex-wrap:wrap;gap:6px 14px;padding-top:10px}
+.scen{text-align:left;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);font-size:13px;transition:.15s}
+.scen:hover{border-color:var(--border-2);background:var(--surface-3)}
+.scen b{display:block;font-size:13px}
+.scen span{font-size:11.5px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:12.5px;color:var(--text-2)}
+.layers label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.layers input{accent-color:var(--brand)}
+.run{position:relative;overflow:hidden;width:100%}
+.run .prog{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.28);width:0;transition:width .1s}
+.run span{position:relative}
+
+.map-col{min-width:0}
+.map-wrap{position:relative;background:var(--map);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+#map{display:block;width:100%;height:auto;user-select:none}
+.banner{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-height:32px;margin-bottom:10px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;background:var(--surface);border:1px solid var(--border-2);font-size:12.5px;font-weight:600}
+.pill.crit{border-color:rgba(208,59,59,.6)}
+.pill.ok{border-color:rgba(12,163,12,.5)}
+.pill i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--text-2);padding:10px 4px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg-line{width:22px;height:0;border-top:3px solid}
+.lg-sq{width:12px;height:12px;border-radius:3px;border:2px solid var(--c1);background:#10213d}
+.lg-dot{width:12px;height:12px;border-radius:50%}
+.lg-x{color:var(--critical);font-weight:800}
+.lg-grad{width:46px;height:6px;border-radius:3px;background:linear-gradient(90deg,#4a5670,#c2417a)}
+.road-hit{stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
+.road-hit:hover{stroke:rgba(255,255,255,.12)}
+.node{cursor:pointer}
+.lbl{font-size:12px;font-weight:650;fill:#e3e9f3;paint-order:stroke;stroke:var(--map);stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}
+.sub{font-size:10.5px;font-weight:500;fill:#8e9bb3;paint-order:stroke;stroke:var(--map);stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}
+.xlbl{font-size:10.5px;font-style:italic;fill:#9fb0c8;paint-order:stroke;stroke:var(--map);stroke-width:3px;pointer-events:none}
+.region{font-size:11px;letter-spacing:.28em;fill:#3b4b68;font-weight:700;pointer-events:none}
+.route{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.route.sel{stroke-dasharray:12 7;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-19}}
+.pulse{animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55}}
+.sel-ring{fill:none;stroke:#fff;stroke-width:2;animation:ring 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ring{0%{opacity:.9;transform:scale(.75)}100%{opacity:0;transform:scale(1.6)}}
+
+/* right panel */
+.pd-ipc{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:6px}
+.pd-name{font-size:19px;font-weight:750;margin:8px 0 2px;letter-spacing:-.01em}
+.tier-badge{display:inline-flex;align-items:center;gap:8px;margin:12px 0 10px;font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:8px;background:var(--surface-3)}
+.tier-badge i,.tchip i{font-style:normal;width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;color:#0b1426;font-weight:800}
+.reason{font-size:13.5px;color:var(--text-2);line-height:1.5}
+.reason b{color:var(--text)}
+.cmp{margin:12px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.cmp-row{display:grid;grid-template-columns:64px 1fr;gap:4px 10px;padding:9px 11px;font-size:12.5px}
+.cmp-row + .cmp-row{border-top:1px solid var(--border)}
+.cmp-row .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;padding-top:2px}
+.cmp-row.was .v{color:var(--muted)}
+.cmp-row.was .v b{text-decoration:line-through;text-decoration-color:rgba(208,59,59,.8)}
+.cmp-row .v em{font-style:normal;color:var(--muted);display:block;font-size:11.5px}
+.path{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11.5px;color:var(--text-2);margin-bottom:12px}
+.path span{background:var(--surface-3);padding:2px 7px;border-radius:5px}
+.path span.x{background:rgba(57,135,229,.16);color:#9cc4f5}
+.path b{color:var(--muted);font-weight:400}
+.dl{display:grid;gap:4px}
+.dl-row{display:grid;grid-template-columns:10px 1fr auto;gap:9px;align-items:center;padding:7px 8px;border-radius:9px;text-align:left;font-size:12.5px;border:1px solid transparent}
+.dl-row:hover{background:var(--surface-2)}
+.dl-row.on{background:var(--surface-2);border-color:var(--border-2)}
+.dl-dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.5)}
+.dl-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-name small{color:var(--muted);margin-left:4px}
+.tchip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-2);white-space:nowrap}
+.tchip i{width:16px;height:16px;font-size:10px}
+.sm{display:grid;gap:9px;font-size:12px}
+.sm-row{display:grid;grid-template-columns:1fr auto;gap:4px 8px}
+.sm-row .meter{grid-column:1/-1;height:6px;border-radius:3px;background:#1d3557;overflow:hidden;display:flex}
+.sm-row .meter span{background:var(--c1);border-radius:0 3px 3px 0}
+.sm-row.off .meter{background:#3a2024}
+.sm-row .n{color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* bottom: simulation + log */
+.bottom{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:16px;margin-top:16px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--text-2)}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.01em;margin-top:2px}
+.kpi .d{font-size:11.5px;color:var(--muted)}
+.kpi .d.good{color:var(--good)}
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-2)}
+.chart-legend span{display:inline-flex;align-items:center;gap:6px}
+.chart-legend i{font-style:normal;width:16px;height:16px;border-radius:4px;display:inline-grid;place-items:center;font-size:10px;color:#0b1426;font-weight:800}
+.view-toggle{display:flex;background:var(--surface-3);border-radius:8px;padding:2px}
+.view-toggle button{font-size:12px;padding:4px 10px;border-radius:6px;color:var(--text-2)}
+.view-toggle button.on{background:var(--surface);color:var(--text)}
+.mc-row{display:grid;grid-template-columns:220px minmax(0,1fr) 170px;gap:14px;align-items:center;padding:6px 0;font-size:12.5px}
+.mc-name{display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.mc-name small{color:var(--muted)}
+.ipc-chip{font-size:10.5px;font-weight:800;width:20px;height:20px;border-radius:5px;display:inline-grid;place-items:center;flex:none}
+.mc-bar{display:flex;gap:2px;height:18px}
+.mc-bar span{height:100%;min-width:2px;cursor:default}
+.mc-bar span:last-child{border-radius:0 4px 4px 0}
+.mc-alt{color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-alt b{color:var(--text);font-weight:600}
+.mc-axis{display:grid;grid-template-columns:220px minmax(0,1fr) 170px;gap:14px;font-size:10.5px;color:var(--muted);margin-top:2px}
+.mc-axis div{display:flex;justify-content:space-between}
+.mc-empty{border:1px dashed var(--border-2);border-radius:12px;padding:28px;text-align:center;color:var(--muted);font-size:13.5px}
+table.mc-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.mc-table th,.mc-table td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--border)}
+.mc-table th{color:var(--muted);font-weight:600;font-size:11.5px}
+.mc-table th:first-child,.mc-table td:first-child{text-align:left}
+.recs{display:grid;gap:8px;margin-top:18px}
+.rec{display:grid;grid-template-columns:26px 1fr auto;gap:12px;align-items:start;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px}
+.rec .ri{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#0b1426}
+.rec b{font-size:13.5px}
+.rec p{font-size:12.5px;color:var(--text-2);margin-top:3px;line-height:1.45}
+.rec .btn.done{background:transparent;border:1px solid rgba(12,163,12,.5);color:#5fd35f}
+.log{background:#060a14;border:1px solid var(--border);border-radius:12px;height:560px;overflow:auto;padding:10px 12px;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#a9b6cb}
+.log div{padding:1px 0}
+.log .ts{color:#56627a}
+.log .warn{color:#fab219}
+.log .crit{color:#ff7b7b}
+.log .ok{color:#5fd35f}
+.log .hl{color:#e8edf5}
+.log .dim{color:#6f7b92}
+
+/* engine / scale */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+.step .n{width:30px;height:30px;border-radius:9px;background:rgba(45,212,191,.12);color:var(--brand);display:grid;place-items:center;font-weight:800;margin-bottom:14px}
+.step p{font-size:14px;color:var(--text-2);margin-top:6px}
+.engine-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;align-items:stretch}
+pre.code{background:#060a14;border:1px solid var(--border);border-radius:16px;padding:20px;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c7d2e3;overflow:auto}
+pre.code .c{color:#5d6a83}
+pre.code .k{color:#2dd4bf}
+pre.code .f{color:#9cc4f5}
+.feeds{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+.feeds ul{list-style:none;display:grid;gap:10px;margin-top:12px}
+.feeds li{display:grid;grid-template-columns:auto 1fr;gap:12px;font-size:13.5px;color:var(--text-2)}
+.feeds li b{color:var(--text);display:block;font-size:13.5px}
+.feeds li i{font-style:normal;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--surface-3);font-size:14px}
+.scale{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+.scale div{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+.scale div.hi{border-color:rgba(45,212,191,.45);background:linear-gradient(180deg,rgba(45,212,191,.08),var(--surface))}
+.scale b{display:block;margin:10px 0 4px}
+.scale p{font-size:13.5px;color:var(--text-2)}
+.scale em{font-style:normal;font-size:22px}
+.cta{background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(57,135,229,.08));border:1px solid var(--border);border-radius:24px;padding:48px;display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
+footer{border-top:1px solid var(--border);padding:28px 0;color:var(--muted);font-size:12.5px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+.tip{position:fixed;z-index:100;pointer-events:none;background:#0a1120;border:1px solid var(--border-2);border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.5;color:var(--text-2);max-width:280px;box-shadow:0 12px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .08s}
+.tip b{color:var(--text)}
+.tip.show{opacity:1}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,30px);background:#0f1b30;border:1px solid rgba(45,212,191,.5);color:var(--text);padding:12px 18px;border-radius:12px;font-size:13.5px;opacity:0;transition:.25s;z-index:120;box-shadow:0 16px 40px rgba(0,0,0,.5);max-width:90vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:1280px){
+  .ct-grid{grid-template-columns:280px minmax(0,1fr)}
+  .ct-right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .ct-right .panel + .panel{margin-top:0}
+  .bottom{grid-template-columns:1fr}
+}
+@media (max-width:900px){
+  .hero-grid,.tiers,.steps,.engine-row,.scale,.facts .wrap{grid-template-columns:1fr}
+  .ct-grid,.ct-right{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .mc-row,.mc-axis{grid-template-columns:140px 1fr}
+  .mc-alt{display:none}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#2dd4bf"/><path d="M7 23 L13 11 L19 19 L25 9" fill="none" stroke="#04211d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="23" r="2.6" fill="#04211d"/><circle cx="25" cy="9" r="2.6" fill="#04211d"/></svg>
+      Njia <small>Logistics</small>
+    </a>
+    <nav class="nav-links">
+      <a href="#problem">Why fallback</a>
+      <a href="#control-tower">Live control tower</a>
+      <a href="#engine">Lifeline Engine</a>
+      <a href="#scale">Industries</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="#control-tower">Partner login</a>
+      <a class="btn btn-primary btn-sm" href="#contact">Request a pilot</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Humanitarian food logistics · Fragile road networks</div>
+      <h1 style="margin-top:16px">When the road breaks,<br>the food still arrives.</h1>
+      <p class="lead">Njia moves food aid for NGOs and governments through regions where floods, cyclones and conflict can close a road overnight. Our <b style="color:var(--text)">Lifeline Engine</b> predicts which roads are about to fail, simulates thousands of possible futures, and keeps a ready-to-dispatch fallback plan for every camp, clinic and village we serve.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#control-tower">Open the live control tower →</a>
+        <a class="btn btn-ghost" href="#problem">Why rerouting isn't enough</a>
+      </div>
+      <div class="hero-trust"><span>IPC-phase prioritisation</span><span>SMS / USSD driver dispatch</span><span>Works offline at the depot</span></div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-card-top"><span><span class="live-dot"></span>Lifeline Engine · split-network fallback</span><span>loop · 9 s</span></div>
+      <svg id="hero-svg" viewBox="0 0 520 300" aria-label="Animation: supplier A to camp B is cut, network splits, nearest supplier C serves B">
+        <defs><filter id="hglow"><feGaussianBlur stdDeviation="3"/></filter></defs>
+        <path d="M252 0 C272 60 236 120 258 170 S246 260 262 300" fill="none" stroke="#1f5fa8" stroke-width="10" opacity=".55"/>
+        <path d="M252 0 C272 60 236 120 258 170 S246 260 262 300" fill="none" stroke="#3b82c4" stroke-width="2" opacity=".7"/>
+        <ellipse id="h-haloA" cx="130" cy="150" rx="112" ry="118" fill="#3987e5" opacity="0"/>
+        <ellipse id="h-haloB" cx="400" cy="155" rx="108" ry="122" fill="#d95926" opacity="0"/>
+        <text id="h-haloA-t" x="40" y="22" class="sub" style="font-size:11px;fill:#9cc4f5" opacity="0">NETWORK 1</text>
+        <text id="h-haloB-t" x="400" y="22" class="sub" style="font-size:11px;fill:#f0a283" opacity="0">NETWORK 2</text>
+        <g stroke="#46536b" stroke-width="3" stroke-linecap="round">
+          <line x1="60" y1="150" x2="150" y2="75"/><line x1="60" y1="150" x2="160" y2="225"/>
+          <line x1="150" y1="75" x2="205" y2="150"/><line x1="160" y1="225" x2="205" y2="150"/>
+          <line x1="330" y1="75" x2="470" y2="95"/><line x1="330" y1="75" x2="400" y2="150"/>
+          <line x1="400" y1="150" x2="470" y2="95"/><line x1="400" y1="150" x2="465" y2="235"/>
+          <line x1="340" y1="225" x2="465" y2="235"/><line x1="340" y1="225" x2="400" y2="150"/>
+        </g>
+        <line id="h-br1" x1="150" y1="75" x2="330" y2="75" stroke="#55627c" stroke-width="4" stroke-linecap="round"/>
+        <line id="h-br2" x1="160" y1="225" x2="340" y2="225" stroke="#55627c" stroke-width="4" stroke-linecap="round"/>
+        <polyline id="h-rAB" points="60,150 150,75 330,75 470,95" fill="none" stroke="#0ca30c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+        <polyline id="h-rCB" points="465,235 400,150 470,95" fill="none" stroke="#ec835a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+        <g id="h-cuts" opacity="0">
+          <g transform="translate(240 75)"><circle r="10" fill="#2a0f12" stroke="#d03b3b" stroke-width="2"/><path d="M-4 -4 L4 4 M4 -4 L-4 4" stroke="#ff8a8a" stroke-width="2.4" stroke-linecap="round"/></g>
+          <g transform="translate(250 225)"><circle r="10" fill="#2a0f12" stroke="#d03b3b" stroke-width="2"/><path d="M-4 -4 L4 4 M4 -4 L-4 4" stroke="#ff8a8a" stroke-width="2.4" stroke-linecap="round"/></g>
+        </g>
+        <g fill="#6b7790"><circle cx="150" cy="75" r="4.5"/><circle cx="160" cy="225" r="4.5"/><circle cx="205" cy="150" r="4.5"/><circle cx="330" cy="75" r="4.5"/><circle cx="340" cy="225" r="4.5"/><circle cx="400" cy="150" r="4.5"/></g>
+        <g transform="translate(60 150)"><rect x="-13" y="-13" width="26" height="26" rx="6" fill="#10213d" stroke="#3987e5" stroke-width="2"/><text y="5" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#9cc4f5">A</text></g>
+        <g transform="translate(465 235)"><rect x="-13" y="-13" width="26" height="26" rx="6" fill="#10213d" stroke="#3987e5" stroke-width="2"/><text y="5" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#9cc4f5">C</text></g>
+        <g transform="translate(470 95)"><circle r="13" fill="#c80000" stroke="#eef2f8" stroke-width="1.5"/><text y="5" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#fff">B</text></g>
+        <text x="60" y="183" text-anchor="middle" class="sub">Port (supplier A)</text>
+        <text x="505" y="70" text-anchor="end" class="sub">Camp (destination B)</text>
+        <text x="465" y="268" text-anchor="middle" class="sub">Local depot (C)</text>
+        <circle id="h-truck" r="6" fill="#0ca30c" stroke="#0b1426" stroke-width="2" opacity="0"/>
+        <g font-size="13" font-weight="650" fill="#e3e9f3">
+          <text id="h-cap1" x="20" y="290">① Planned delivery: supplier A → camp B</text>
+          <text id="h-cap2" x="20" y="290" opacity="0" fill="#ff9a9a">② Floods take both bridges. The graph splits in two</text>
+          <text id="h-cap3" x="20" y="290" opacity="0" fill="#f6b79c">③ Fallback: nearest supplier C in B's network → B</text>
+        </g>
+      </svg>
+      <div class="hero-stats">
+        <div><b>1,284</b><span>road segments monitored</span></div>
+        <div><b>312</b><span>fallback plans pre-computed</span></div>
+        <div><b>&lt; 5 ms</b><span>to re-plan a network</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="facts">
+  <div class="wrap">
+    <div class="fact"><b>~733M</b><span>people faced hunger in 2023</span><cite>FAO et al., SOFI 2024</cite></div>
+    <div class="fact"><b>≈80%</b><span>of disaster relief is logistics</span><cite>Van Wassenhove, J. Oper. Res. Soc., 2006</cite></div>
+    <div class="fact"><b>24–72 h</b><span>of warning from weather & conflict signals, usually wasted</span><cite>Lifeline Engine forecast window</cite></div>
+    <div class="fact"><b>3 tiers</b><span>reroute → re-source → airlift, decided automatically</span><cite>Graph + Monte Carlo engine</cite></div>
+  </div>
+</div>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="eyebrow">The problem with detours</div>
+    <h2>A detour only works if a road still connects the two places.</h2>
+    <p class="lead">Navigation apps assume you can always drive around a closure. In fragile regions that breaks down: when a river floods, every bridge can go at once and the road network splits into separate islands. The port and the camp end up in different networks with no road between them. Planning a better route doesn't help. You need a different supplier.</p>
+    <div class="tiers">
+      <div class="tier-card">
+        <svg viewBox="0 0 240 110">
+          <g stroke="#46536b" stroke-width="3" stroke-linecap="round"><line x1="30" y1="55" x2="120" y2="25"/><line x1="120" y1="25" x2="210" y2="55"/><line x1="30" y1="55" x2="120" y2="88"/><line x1="120" y1="88" x2="210" y2="55"/></g>
+          <polyline points="30,55 120,88 210,55" fill="none" stroke="#fab219" stroke-width="3.5" stroke-linecap="round"/>
+          <g transform="translate(75 40)"><circle r="8" fill="#2a0f12" stroke="#d03b3b" stroke-width="1.5"/><path d="M-3 -3 L3 3 M3 -3 L-3 3" stroke="#ff8a8a" stroke-width="2" stroke-linecap="round"/></g>
+          <rect x="19" y="44" width="22" height="22" rx="5" fill="#10213d" stroke="#3987e5" stroke-width="2"/><text x="30" y="60" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#9cc4f5">A</text>
+          <circle cx="210" cy="55" r="11" fill="#c80000" stroke="#eef2f8" stroke-width="1.5"/><text x="210" y="59" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#fff">B</text>
+        </svg>
+        <span class="tag"><i style="background:#fab219">↻</i>Tier 1 · Reroute</span>
+        <h3>Road closed, network still connected</h3>
+        <p>Same supplier, new path. Shortest alternate route on the live graph with <code>Dijkstra(G − closed)</code>. Drivers get the detour by SMS.</p>
+      </div>
+      <div class="tier-card">
+        <svg viewBox="0 0 240 110">
+          <path d="M120 0 C130 30 112 70 124 110" stroke="#1f5fa8" stroke-width="7" fill="none" opacity=".6"/>
+          <ellipse cx="185" cy="58" rx="52" ry="50" fill="#d95926" opacity=".13"/>
+          <g stroke="#46536b" stroke-width="3" stroke-linecap="round"><line x1="30" y1="55" x2="80" y2="30"/><line x1="30" y1="55" x2="80" y2="82"/><line x1="160" y1="55" x2="205" y2="25"/><line x1="160" y1="55" x2="205" y2="88"/></g>
+          <g stroke="#d03b3b" stroke-width="3" stroke-dasharray="3 5" stroke-linecap="round"><line x1="80" y1="30" x2="160" y2="55"/><line x1="80" y1="82" x2="160" y2="55"/></g>
+          <polyline points="205,88 160,55 205,25" fill="none" stroke="#ec835a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <g transform="translate(120 42)"><circle r="7" fill="#2a0f12" stroke="#d03b3b" stroke-width="1.5"/><path d="M-3 -3 L3 3 M3 -3 L-3 3" stroke="#ff8a8a" stroke-width="2" stroke-linecap="round"/></g>
+          <g transform="translate(120 68)"><circle r="7" fill="#2a0f12" stroke="#d03b3b" stroke-width="1.5"/><path d="M-3 -3 L3 3 M3 -3 L-3 3" stroke="#ff8a8a" stroke-width="2" stroke-linecap="round"/></g>
+          <rect x="19" y="44" width="22" height="22" rx="5" fill="#10213d" stroke="#3987e5" stroke-width="2"/><text x="30" y="60" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#9cc4f5">A</text>
+          <rect x="194" y="77" width="22" height="22" rx="5" fill="#10213d" stroke="#3987e5" stroke-width="2"/><text x="205" y="93" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#9cc4f5">C</text>
+          <circle cx="205" cy="25" r="11" fill="#c80000" stroke="#eef2f8" stroke-width="1.5"/><text x="205" y="29" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#fff">B</text>
+          <circle cx="80" cy="30" r="3.5" fill="#6b7790"/><circle cx="80" cy="82" r="3.5" fill="#6b7790"/><circle cx="160" cy="55" r="3.5" fill="#6b7790"/>
+        </svg>
+        <span class="tag"><i style="background:#ec835a">⇄</i>Tier 2 · Re-source</span>
+        <h3>Network split, destination stranded</h3>
+        <p>Find the connected component that contains B, then the closest supplier C inside it that has stock: <code>argmin d(B, s), s ∈ K(B)</code>. CB is longer than AB, but it's a route that exists.</p>
+      </div>
+      <div class="tier-card">
+        <svg viewBox="0 0 240 110">
+          <g stroke="#d03b3b" stroke-width="3" stroke-dasharray="3 5" stroke-linecap="round"><line x1="185" y1="60" x2="140" y2="25"/><line x1="185" y1="60" x2="150" y2="95"/></g>
+          <path d="M40 80 Q110 -5 185 60" fill="none" stroke="#d03b3b" stroke-width="2.5" stroke-dasharray="7 6"/>
+          <text x="104" y="30" style="font-size:16px;fill:#ff9a9a">✈</text>
+          <rect x="29" y="69" width="22" height="22" rx="5" fill="#10213d" stroke="#3987e5" stroke-width="2"/><text x="40" y="85" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#9cc4f5">S</text>
+          <circle cx="185" cy="60" r="11" fill="#c80000" stroke="#eef2f8" stroke-width="1.5"/><text x="185" y="64" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#fff">B</text>
+          <circle cx="140" cy="25" r="3.5" fill="#6b7790"/><circle cx="150" cy="95" r="3.5" fill="#6b7790"/>
+        </svg>
+        <span class="tag"><i style="background:#d03b3b">✈</i>Tier 3 · Airlift / escalate</span>
+        <h3>No supplier left in reach</h3>
+        <p>B's component has no stock or B is fully isolated. The shortfall is escalated to the nearest airstrip with stock, a river barge or a cross-border corridor, and partners are alerted.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ct" id="control-tower">
+  <div class="wrap wide">
+    <div class="ct-head">
+      <div>
+        <div class="eyebrow">Live control tower · demo network</div>
+        <h2>Kora Basin food corridor</h2>
+        <p class="lead">23 nodes, 37 roads, 8 delivery sites, 138,500 people. Close a road, take a supplier offline, or let the forecast do it. Every change re-plans the whole network.</p>
+      </div>
+      <div class="ct-clock"><b id="clock">—</b><br>Fictional region and data for demonstration</div>
+    </div>
+
+    <div class="ct-grid">
+      <!-- LEFT -->
+      <div class="ct-left">
+        <div class="panel">
+          <h4>World state <small>forecast horizon</small></h4>
+          <div class="seg" id="horizon"></div>
+          <div id="alerts"></div>
+          <button class="btn btn-primary run" id="run-mc"><div class="prog" id="mc-prog"></div><span id="run-label">Run 2,000 simulations</span></button>
+          <button class="btn btn-ghost" id="preview" style="width:100%;margin-top:8px;white-space:normal" data-tip="Closes every road with ≥50% failure probability at the selected horizon and re-plans">Apply predicted closures</button>
+        </div>
+        <div class="panel">
+          <h4>Supplier stock <small>committed this week</small></h4>
+          <div class="sm" id="stock"></div>
+        </div>
+      </div>
+
+      <!-- MAP -->
+      <div class="map-col">
+        <div class="banner" id="banner"></div>
+        <div class="map-wrap">
+          <svg id="map" viewBox="0 0 1000 640" aria-label="Interactive road network map">
+            <defs>
+              <radialGradient id="hzg"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+            </defs>
+            <g id="g-terrain"></g>
+            <g id="g-hazards"></g>
+            <g id="g-comps"></g>
+            <g id="g-bridges"></g>
+            <g id="g-edges"></g>
+            <g id="g-routes"></g>
+            <g id="g-cuts" style="pointer-events:none"></g>
+            <g id="g-trucks" style="pointer-events:none"></g>
+            <g id="g-hits"></g>
+            <g id="g-nodes"></g>
+          </svg>
+        </div>
+        <div class="scen-bar">
+          <button class="scen" data-scen="washout"><b>1 · Bridge washout</b><span>Graph still connected → reroute</span></button>
+          <button class="scen" data-scen="flood"><b>2 · Kora River flood</b><span>All 4 crossings lost → re-source</span></button>
+          <button class="scen" data-scen="compound"><b>3 · Flood + cyclone + unrest</b><span>Port offline, site isolated → airlift</span></button>
+          <button class="scen" data-scen="reset" style="text-align:center;display:grid;place-items:center"><b>↺ Reset</b></button>
+        </div>
+        <p class="hint" style="margin-top:8px">Click any <b>road</b> to close or reopen it, like a driver's SMS report. Click a <b>warehouse</b> to take it offline. Click a <b>site</b> to inspect its plan.</p>
+        <div class="legend">
+          <span><i class="lg-sq"></i>Supplier (warehouse / port / co-op)</span>
+          <span><i class="lg-dot" style="background:#c80000;box-shadow:0 0 0 1.5px #eef2f8"></i>Delivery site (IPC phase), ring = plan tier</span>
+          <span><i class="lg-grad"></i>Road failure risk</span>
+          <span><b class="lg-x">✕</b>Closed road</span>
+          <span><i class="lg-line" style="border-color:#0ca30c"></i>On plan</span>
+          <span><i class="lg-line" style="border-color:#fab219"></i>Rerouted</span>
+          <span><i class="lg-line" style="border-color:#ec835a"></i>Re-sourced</span>
+          <span><i class="lg-line" style="border-color:#d03b3b;border-top-style:dashed"></i>Airlift</span>
+        </div>
+        <div class="under">
+          <div class="layers">
+            <label><input type="checkbox" data-layer="risk" checked> Road failure risk</label>
+            <label><input type="checkbox" data-layer="hazards" checked> Hazard zones</label>
+            <label><input type="checkbox" data-layer="comps" checked> Network islands</label>
+            <label><input type="checkbox" data-layer="bridges"> Critical roads</label>
+            <label><input type="checkbox" data-layer="trucks" checked> Trucks</label>
+            <label><input type="checkbox" data-layer="all" checked> All routes</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="ct-right">
+        <div class="panel" id="plan-panel"></div>
+        <div class="panel">
+          <h4>Delivery sites <small>by IPC priority</small></h4>
+          <div class="dl" id="dest-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="panel">
+        <h4>Monte Carlo · fallback readiness <small id="mc-meta">not run yet</small></h4>
+        <div id="mc"></div>
+      </div>
+      <div class="panel">
+        <h4>Engine log <small>live</small></h4>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="engine">
+  <div class="wrap">
+    <div class="eyebrow">How the Lifeline Engine works</div>
+    <h2>From weather alert to a dispatched fallback in four steps.</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Model the network as a graph</h3><p>Ports, warehouses, farm co-ops, camps and clinics are nodes. Roads, bridges, ferries and passes are edges, weighted by travel time and road condition.</p></div>
+      <div class="step"><div class="n">2</div><h3>Read the world state</h3><p>Rainfall and river forecasts, cyclone tracks, conflict events and driver reports become a failure probability for every road at each forecast horizon.</p></div>
+      <div class="step"><div class="n">3</div><h3>Simulate thousands of futures</h3><p>We sample road failures, recompute connectivity and allocate stock by IPC priority, then measure how often each site loses its supply line.</p></div>
+      <div class="step"><div class="n">4</div><h3>Act before the road is gone</h3><p>Pre-position stock at fallback depots, send deliveries early, push detours to drivers by SMS and put airlift on standby, all before the closure happens.</p></div>
+    </div>
+    <div class="engine-row">
+<pre class="code"><span class="c"># runs on every closure report or forecast update</span>
+<span class="k">def</span> <span class="f">replan</span>(G, closed, offline):
+    G' = G − closed − offline
+    K  = <span class="f">connected_components</span>(G')
+    <span class="k">for</span> B <span class="k">in</span> sites.sorted(by=IPC_phase, people):
+        A = primary_supplier(B)
+        <span class="k">if</span> A <span class="k">in</span> K[B]:                 <span class="c"># Tier 0/1</span>
+            route = <span class="f">dijkstra</span>(G', A, B)
+        <span class="k">else</span>:                          <span class="c"># graph split</span>
+            S = suppliers ∩ K[B] with stock  <span class="c"># Tier 2</span>
+            C = <span class="f">argmin</span>(S, key=<span class="f">dist</span>(B, ·))
+            <span class="k">if not</span> C: <span class="f">airlift_or_escalate</span>(B)  <span class="c"># Tier 3</span>
+        stock[C] −= demand[B]
+
+<span class="c"># prediction: P(road fails) from hazards × exposure</span>
+<span class="k">for</span> i <span class="k">in</span> range(<span class="f">2000</span>):
+    closed = {e : rand() &lt; p_fail(e, horizon)}
+    stats += <span class="f">replan</span>(G, closed, offline)</pre>
+      <div class="feeds">
+        <h3>Signals the engine is built to ingest</h3>
+        <ul>
+          <li><i>🌧</i><div><b>Rainfall & river discharge</b>Ensemble forecasts (e.g. ECMWF, GloFAS) → flood risk on low crossings</div></li>
+          <li><i>🌀</i><div><b>Cyclone & disaster alerts</b>GDACS-style alerts and storm tracks → port and coastal closures</div></li>
+          <li><i>⚑</i><div><b>Conflict events</b>ACLED-style incident feeds → checkpoint and road-access risk</div></li>
+          <li><i>🛰</i><div><b>Satellite flood extent</b>Radar flood maps confirm which roads are under water</div></li>
+          <li><i>💬</i><div><b>Driver reports</b>SMS / USSD reports from drivers on basic phones, no app needed</div></li>
+          <li><i>🍚</i><div><b>Food-security phase</b>IPC / FEWS NET classification → who gets served first</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="scale" style="padding-top:24px">
+  <div class="wrap">
+    <div class="eyebrow">Built for hunger. Works for any freight.</div>
+    <h2>The engine doesn't care what's in the truck.</h2>
+    <p class="lead">Any supply chain with suppliers, destinations and unreliable roads has the same graph problem. Food aid is where getting it wrong costs the most, so we started there.</p>
+    <div class="scale">
+      <div class="hi"><em>🌾</em><b>Food aid & nutrition</b><p>Camps, school meals, nutrition centres. IPC-phase priority, perishability windows, local co-op sourcing.</p></div>
+      <div><em>💊</em><b>Medical & cold chain</b><p>Vaccines and essential medicines, where the fallback also has to stay within the cold-chain time limit.</p></div>
+      <div><em>⛽</em><b>Fuel & WASH</b><p>Fuel for water pumps and generators. Keeps clean water running when depots get cut off.</p></div>
+      <div><em>📦</em><b>Commercial distribution</b><p>FMCG and agri-inputs in emerging markets. Fewer stock-outs, fewer trucks idling at a washed-out bridge.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" style="padding-top:24px">
+  <div class="wrap">
+    <div class="cta">
+      <div>
+        <div class="eyebrow">For NGOs, UN agencies & governments</div>
+        <h2 style="margin-bottom:6px">Have a fallback plan before the forecast comes true.</h2>
+        <p class="lead" style="font-size:16px">We onboard your depots and delivery sites in two weeks and run your corridors in shadow mode before going live.</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-primary" href="#control-tower">Try the control tower</a>
+        <a class="btn btn-ghost" href="#top">partners@njia.example</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Njia Logistics. "Njia" means <i>path</i> in Swahili.</span>
+    <span>World Hunger hackathon concept demo. Company, map, stock and forecast figures are illustrative.</span>
+  </div>
+</footer>
+
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ============================ ENGINE (pure, no DOM) ============================ -->
+<script id="engine">
+const KM_PER_PX = 0.85, AIR_KMH = 160, AIR_PREP_H = 3;
+const SPEED = {H:60, G:40, D:25, P:18};
+const BASE_RISK = {H:.01, G:.02, D:.04, P:.05};
+const ROAD_NAME = {H:'Paved highway', G:'Gravel road', D:'Dirt track', P:'Mountain pass'};
+const HORIZONS = ['Now','+24h','+48h','+72h'];
+const IPC = {
+  1:{name:'Minimal', color:'#cdfacd', ink:'#0b1426'}, 2:{name:'Stressed', color:'#fae61e', ink:'#0b1426'},
+  3:{name:'Crisis', color:'#e67800', ink:'#fff'}, 4:{name:'Emergency', color:'#c80000', ink:'#fff'},
+  5:{name:'Catastrophe', color:'#640000', ink:'#fff'},
+};
+const TIERS = [
+  {label:'On plan',            icon:'✓', color:'#0ca30c'},
+  {label:'Rerouted',           icon:'↻', color:'#fab219'},
+  {label:'Re-sourced',         icon:'⇄', color:'#ec835a'},
+  {label:'Airlift / escalate', icon:'✈', color:'#d03b3b'},
+];
+
+// type S = supplier, D = delivery site, J = junction. lp = label [dx, dy, anchor]
+const NODES = [
+  {id:'PORT',   short:'Port Bahari', name:'Port Bahari',        type:'S', x:905, y:330, stock:4000, air:true, kind:'Seaport · bulk food stock',        lp:[0,-32,'middle']},
+  {id:'MLIMA',  short:'Mlima', name:'Mlima Warehouse',    type:'S', x:740, y:200, stock:1500, air:true, kind:'Central warehouse',                lp:[16,-2,'start']},
+  {id:'KIJANI', short:'Kijani Co-op', name:'Kijani Farm Co-op',  type:'S', x:285, y:175, stock:180,            kind:'Local smallholder procurement',    lp:[-14,-20,'end']},
+  {id:'ZIWA',   short:'Ziwa Depot', name:'Ziwa Depot',         type:'S', x:190, y:405, stock:320,  air:true, kind:'Regional buffer depot',            lp:[-16,-2,'end']},
+  {id:'MPAKA',  short:'Mpaka Depot', name:'Mpaka Border Depot', type:'S', x:290, y:588, stock:140,            kind:'Cross-border depot',               lp:[18,14,'start']},
+  {id:'JANGWA',   short:'Jangwa Camp', name:'Jangwa Pastoral Camp',   type:'D', x:85,  y:555, people:18000, ipc:5, demand:90,  primary:'PORT',  lp:[0,28,'middle']},
+  {id:'DADU',     short:'Dadu Camp', name:'Dadu Refugee Camp',      type:'D', x:120, y:255, people:48000, ipc:4, demand:210, primary:'PORT',  lp:[-12,-30,'middle']},
+  {id:'RIVERSIDE',short:'Riverside IDP', name:'Riverside IDP Site',     type:'D', x:655, y:425, people:22000, ipc:4, demand:100, primary:'PORT',  lp:[14,-18,'start']},
+  {id:'SELA',     short:'Sela Centre', name:'Sela Nutrition Centre',  type:'D', x:365, y:440, people:6500,  ipc:4, demand:30,  primary:'PORT',  lp:[14,-14,'start']},
+  {id:'SCHOOLS',  short:'Highland Schools', name:'Highland School Meals',  type:'D', x:690, y:95,  people:15000, ipc:3, demand:35,  primary:'MLIMA', lp:[14,-14,'start']},
+  {id:'KAVU',     short:'Kavu', name:'Kavu Villages',          type:'D', x:300, y:305, people:12000, ipc:3, demand:55,  primary:'PORT',  lp:[14,-22,'start']},
+  {id:'UMTO',     short:'Upper Mto', name:'Upper Mto Settlement',   type:'D', x:365, y:100, people:9000,  ipc:3, demand:40,  primary:'MLIMA', lp:[-12,-18,'end']},
+  {id:'COAST',    short:'Coastal Villages', name:'Coastal Fishing Villages',type:'D',x:875, y:550, people:8000,  ipc:2, demand:25,  primary:'PORT',  lp:[0,28,'middle']},
+  {id:'MJI', short:'Mji',   name:'Mji Town',        type:'J', x:780, y:330, lp:[10,18,'start']},
+  {id:'PWANI', name:'Pwani Crossroads',type:'J', x:770, y:475},
+  {id:'EKATI', name:'Kati East',       type:'J', x:595, y:330},
+  {id:'WKATI', name:'Kati West',       type:'J', x:445, y:330},
+  {id:'NB_E',  name:'Kaskazini East',  type:'J', x:575, y:200},
+  {id:'NB_W',  name:'Kaskazini West',  type:'J', x:440, y:195},
+  {id:'HP_E',  name:'Pass East',       type:'J', x:575, y:58},
+  {id:'HP_W',  name:'Pass West',       type:'J', x:440, y:62},
+  {id:'SB_E',  name:'Kusini East',     type:'J', x:615, y:520},
+  {id:'SB_W',  name:'Kusini West',     type:'J', x:470, y:520},
+];
+const EDGES = [
+  ['PORT','MJI','H','A1 Port Highway'], ['MJI','MLIMA','H','A3'], ['MJI','EKATI','H','A2 Trans-Kora Hwy'],
+  ['MJI','PWANI','G','B7'], ['PORT','COAST','G','Coast Road'], ['PWANI','COAST','G','B9'],
+  ['PWANI','RIVERSIDE','G','B8'], ['PWANI','SB_E','D','Track T4'], ['EKATI','RIVERSIDE','G','B5'],
+  ['RIVERSIDE','SB_E','D','Track T3'], ['MLIMA','NB_E','G','B2'], ['MLIMA','SCHOOLS','G','B1'],
+  ['SCHOOLS','HP_E','D','Track T1'], ['NB_E','EKATI','G','B3'], ['NB_E','HP_E','D','Track T2'],
+  ['HP_E','HP_W','P','Highland Pass',    {cross:true, delay:.5}],
+  ['NB_E','NB_W','G','Kaskazini Bridge', {cross:true, delay:.3}],
+  ['EKATI','WKATI','H','Kati Bridge',    {cross:true, delay:.3}],
+  ['SB_E','SB_W','D','Kusini Ferry',     {cross:true, delay:1.5}],
+  ['HP_W','UMTO','D','Track T5'], ['UMTO','KIJANI','D','Track T6'], ['UMTO','NB_W','G','C4'],
+  ['NB_W','KIJANI','G','C3'], ['NB_W','WKATI','G','C5'], ['KIJANI','DADU','D','Track T7'],
+  ['KIJANI','KAVU','G','C2'], ['WKATI','KAVU','H','A2 West'], ['KAVU','DADU','G','C1'],
+  ['KAVU','ZIWA','G','C6'], ['DADU','ZIWA','D','Track T8'], ['WKATI','SELA','G','C7'],
+  ['ZIWA','SELA','G','C8'], ['SELA','SB_W','D','Track T9'], ['ZIWA','JANGWA','D','Track T10'],
+  ['JANGWA','MPAKA','D','Track T11'], ['MPAKA','SB_W','D','Track T12'], ['MPAKA','SELA','D','Track T13'],
+].map(([a,b,t,name,o={}], i) => ({i, a, b, t, name, cross:!!o.cross, delay:o.delay||0}));
+
+const RIVER = [[498,0],[512,50],[500,100],[488,150],[505,200],[522,260],[515,320],[528,380],[520,440],[538,500],[552,560],[560,640]];
+
+const HAZARDS = [
+  {id:'rain', kind:'flood', short:'Flood alert', color:'#3987e5',
+   title:'Extreme rainfall: Kora River basin', src:'ECMWF ensemble · GloFAS river discharge',
+   p:[.10,.40,.72,.85], shape:{type:'river', w:80, minY:130}, tag:[575,600]},
+  {id:'cyclone', kind:'cyclone', short:'Cyclone Ada', color:'#9085e9',
+   title:'Tropical Cyclone Ada: coastal landfall', src:'GDACS orange alert · storm track',
+   p:[.03,.30,.70,.55], shape:{type:'circle', x:905, y:440, r:190}, nodes:{PORT:.75}, tag:[868,425]},
+  {id:'conflict', kind:'conflict', short:'Armed clashes', color:'#d55181',
+   title:'Armed clashes: Upper Mto district', src:'Conflict event feed · 14 incidents / 7 days',
+   p:[.40,.55,.68,.72], shape:{type:'circle', x:375, y:100, r:115}, tag:[250,30]},
+  {id:'slide', kind:'landslide', short:'Landslide risk', color:'#c98500',
+   title:'Landslide risk: Highland Pass', src:'Soil-moisture × slope model',
+   p:[.08,.30,.55,.62], shape:{type:'circle', x:508, y:60, r:80}, tag:[600,22]},
+];
+const SUSCEPT = {
+  flood:    {H:.30, G:.45, D:.65, P:.30, cross:1},
+  cyclone:  {H:.60, G:.75, D:.90, P:.60, cross:.85},
+  conflict: {H:.90, G:.90, D:.90, P:.90, cross:.90},
+  landslide:{H:.20, G:.30, D:.50, P:1,   cross:.40},
+};
+
+for (const n of NODES) n.short = n.short || n.name;
+const N = Object.fromEntries(NODES.map(n => [n.id, n]));
+const NODE_IDS = NODES.map(n => n.id);
+const SUPPLIERS = NODES.filter(n => n.type === 'S');
+const DESTS = NODES.filter(n => n.type === 'D').sort((a,b) => b.ipc - a.ipc || b.people - a.people);
+for (const e of EDGES) {
+  const A = N[e.a], B = N[e.b];
+  e.km = Math.round(Math.hypot(A.x-B.x, A.y-B.y) * KM_PER_PX);
+  e.hours = e.km / SPEED[e.t] + e.delay;
+}
+const edgeByName = name => EDGES.find(e => e.name === name).i;
+
+// ---------- geometry ----------
+function distPtSeg(px, py, ax, ay, bx, by) {
+  const dx = bx-ax, dy = by-ay, L = dx*dx + dy*dy;
+  let t = L ? ((px-ax)*dx + (py-ay)*dy) / L : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t*dx), py - (ay + t*dy));
+}
+function segsCross(a, b, c, d) {
+  const o = (p, q, r) => Math.sign((q[0]-p[0])*(r[1]-p[1]) - (q[1]-p[1])*(r[0]-p[0]));
+  return o(a,b,c) !== o(a,b,d) && o(c,d,a) !== o(c,d,b);
+}
+function distSegSeg(a, b, c, d) {
+  if (segsCross(a, b, c, d)) return 0;
+  return Math.min(distPtSeg(a[0],a[1],c[0],c[1],d[0],d[1]), distPtSeg(b[0],b[1],c[0],c[1],d[0],d[1]),
+                  distPtSeg(c[0],c[1],a[0],a[1],b[0],b[1]), distPtSeg(d[0],d[1],a[0],a[1],b[0],b[1]));
+}
+function exposure(hz, e) {
+  const A = [N[e.a].x, N[e.a].y], B = [N[e.b].x, N[e.b].y], s = hz.shape;
+  if (s.type === 'circle') return Math.max(0, 1 - distPtSeg(s.x, s.y, A[0], A[1], B[0], B[1]) / s.r);
+  let d = Infinity;
+  for (let k = 0; k < RIVER.length-1; k++) {
+    if (Math.max(RIVER[k][1], RIVER[k+1][1]) < s.minY) continue;
+    d = Math.min(d, distSegSeg(A, B, RIVER[k], RIVER[k+1]));
+  }
+  return Math.max(0, 1 - d / s.w);
+}
+const EXPOSURE = HAZARDS.map(hz => EDGES.map(e => exposure(hz, e)));
+
+// ---------- risk model: P(road fails) at horizon h given active hazards ----------
+function riskModel(h, active) {
+  const edgeP = [], drivers = [];
+  for (const e of EDGES) {
+    let q = 1 - BASE_RISK[e.t]; const dr = [];
+    HAZARDS.forEach((hz, k) => {
+      if (!active.has(hz.id)) return;
+      const ex = EXPOSURE[k][e.i]; if (ex <= 0) return;
+      const sus = e.cross ? Math.max(SUSCEPT[hz.kind].cross, SUSCEPT[hz.kind][e.t]) : SUSCEPT[hz.kind][e.t];
+      const p = hz.p[h] * ex * sus;
+      if (p > .02) dr.push({hz, p});
+      q *= 1 - p;
+    });
+    edgeP.push(1 - q); drivers.push(dr.sort((a,b) => b.p - a.p));
+  }
+  const nodeP = {};
+  for (const hz of HAZARDS) if (active.has(hz.id) && hz.nodes)
+    for (const [id, f] of Object.entries(hz.nodes)) nodeP[id] = 1 - (1 - (nodeP[id]||0)) * (1 - hz.p[h]*f);
+  return {edgeP, drivers, nodeP};
+}
+
+// ---------- graph algorithms ----------
+function buildAdj(closed, down) {
+  const adj = Object.fromEntries(NODE_IDS.map(id => [id, []]));
+  for (const e of EDGES) {
+    if (closed.has(e.i) || down.has(e.a) || down.has(e.b)) continue;
+    adj[e.a].push({to:e.b, e:e.i}); adj[e.b].push({to:e.a, e:e.i});
+  }
+  return adj;
+}
+function dijkstra(adj, src) {
+  const dist = {}, prev = {}, done = new Set();
+  for (const id of NODE_IDS) dist[id] = Infinity;
+  dist[src] = 0;
+  for (;;) {
+    let u = null, best = Infinity;
+    for (const id of NODE_IDS) if (!done.has(id) && dist[id] < best) { best = dist[id]; u = id; }
+    if (u === null) break;
+    done.add(u);
+    for (const {to, e} of adj[u]) {
+      const nd = best + EDGES[e].hours;
+      if (nd < dist[to]) { dist[to] = nd; prev[to] = {from:u, e}; }
+    }
+  }
+  return {dist, prev};
+}
+// Dijkstra runs from the destination, so following prev from a supplier walks supplier → destination.
+function trace(res, from) {
+  const nodes = [from], edges = []; let cur = from;
+  while (res.prev[cur]) { edges.push(res.prev[cur].e); cur = res.prev[cur].from; nodes.push(cur); }
+  return {nodes, edges};
+}
+function components(adj, down) {
+  const of = {}, groups = [];
+  for (const id of NODE_IDS) {
+    if (of[id] !== undefined || down.has(id)) continue;
+    const g = [], q = [id]; of[id] = groups.length;
+    while (q.length) { const u = q.pop(); g.push(u); for (const {to} of adj[u]) if (of[to] === undefined) { of[to] = groups.length; q.push(to); } }
+    groups.push(g);
+  }
+  // only islands that hold a supplier or a delivery site matter; strongest supply first so colours follow the island
+  const rel = groups.map((g, k) => ({k, nodes:g, sup:g.filter(id => N[id].type === 'S'), dst:g.filter(id => N[id].type === 'D')}))
+    .filter(g => g.sup.length || g.dst.length)
+    .sort((a, b) => b.sup.reduce((s, id) => s + N[id].stock, 0) - a.sup.reduce((s, id) => s + N[id].stock, 0) || b.nodes.length - a.nodes.length);
+  return {of, groups, rel};
+}
+function findBridges(adj) {
+  const disc = {}, low = {}, out = new Set(); let t = 0;
+  const dfs = (u, pe) => {
+    disc[u] = low[u] = ++t;
+    for (const {to, e} of adj[u]) {
+      if (e === pe) continue;
+      if (disc[to] === undefined) { dfs(to, e); low[u] = Math.min(low[u], low[to]); if (low[to] > disc[u]) out.add(e); }
+      else low[u] = Math.min(low[u], disc[to]);
+    }
+  };
+  for (const id of NODE_IDS) if (disc[id] === undefined) dfs(id, -1);
+  return out;
+}
+// bridges whose loss would strand a site or a supplier (not just a dead-end junction)
+function criticalRoads(closed, down) {
+  const adj = buildAdj(closed, down), base = components(adj, down).rel.length;
+  return [...findBridges(adj)].filter(i => components(buildAdj(new Set([...closed, i]), down), down).rel.length > base);
+}
+
+// ---------- planner: priority-aware, capacity-aware, 3-tier fallback ----------
+let BASE = null;
+function planNetwork(closed, down) {
+  const adj = buildAdj(closed, down), comp = components(adj, down);
+  const stock = {}; for (const s of SUPPLIERS) stock[s.id] = down.has(s.id) ? 0 : s.stock;
+  const plans = {};
+  for (const d of DESTS) {
+    const r = dijkstra(adj, d.id);
+    const reach = SUPPLIERS.filter(s => !down.has(s.id) && r.dist[s.id] < Infinity).sort((a,b) => r.dist[a.id] - r.dist[b.id]);
+    const order = [...reach.filter(s => s.id === d.primary), ...reach.filter(s => s.id !== d.primary)];
+    const p = {id:d.id, sources:[], shortfall:0, airlift:null, tier:0,
+      primaryDown: down.has(d.primary), primaryReachable: reach.some(s => s.id === d.primary),
+      nearestAlt: (reach.find(s => s.id !== d.primary) || {}).id || null};
+    let need = d.demand;
+    for (const s of order) {
+      if (need <= 0) break;
+      const take = Math.min(need, stock[s.id]);
+      if (take <= 0) continue;
+      stock[s.id] -= take; need -= take;
+      const tr = trace(r, s.id);
+      p.sources.push({sid:s.id, tons:take, hours:r.dist[s.id], km:tr.edges.reduce((a, i) => a + EDGES[i].km, 0), nodes:tr.nodes, edges:tr.edges});
+    }
+    if (need > 0) {
+      p.shortfall = need;
+      const air = SUPPLIERS.filter(s => s.air && !down.has(s.id))
+        .map(s => ({s, km:Math.hypot(s.x - d.x, s.y - d.y) * KM_PER_PX}))
+        .sort((a, b) => (stock[b.s.id] >= need) - (stock[a.s.id] >= need) || a.km - b.km)[0];
+      if (air) {
+        p.airlift = {sid:air.s.id, tons:need, km:Math.round(air.km), hours:air.km / AIR_KMH + AIR_PREP_H};
+        stock[air.s.id] = Math.max(0, stock[air.s.id] - need);
+      }
+    }
+    const land = p.sources.length ? Math.max(...p.sources.map(s => s.hours)) : 0;
+    p.hours = p.airlift ? Math.max(land, p.airlift.hours) : (p.sources.length ? land : Infinity);
+    if (p.shortfall > 0) p.tier = 3;
+    else if (p.sources.some(s => s.sid !== d.primary)) p.tier = 2;
+    else if (BASE && p.sources[0].hours > BASE[d.id].hours + .05) p.tier = 1;
+    plans[d.id] = p;
+  }
+  return {plans, comp, stock};
+}
+BASE = (() => { const r = planNetwork(new Set(), new Set()).plans; return Object.fromEntries(DESTS.map(d => [d.id, {hours:r[d.id].sources[0].hours, km:r[d.id].sources[0].km, nodes:r[d.id].sources[0].nodes}])); })();
+
+// ---------- Monte Carlo over sampled futures ----------
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function seedFor(h, active) { let s = 2026 + h * 7919; for (const id of [...active].sort()) for (const c of id) s = Math.imul(s ^ c.charCodeAt(0), 2654435761); return s >>> 0; }
+
+function monteCarlo({runs, h, active, chunk = 125, schedule = f => f()}, onChunk, onDone) {
+  const {edgeP, nodeP} = riskModel(h, active), rng = mulberry32(seedFor(h, active));
+  const S = {runs:0, total:runs, h, split:0, dest:{}, altDemand:{}, edgeHits:new Array(EDGES.length).fill(0)};
+  for (const d of DESTS) S.dest[d.id] = {tiers:[0,0,0,0], alt:{}, extra:0, extraN:0};
+  for (const s of SUPPLIERS) S.altDemand[s.id] = [];
+  let i = 0;
+  const step = () => {
+    const end = Math.min(runs, i + chunk);
+    for (; i < end; i++) {
+      const closed = new Set(), down = new Set();
+      for (const e of EDGES) if (rng() < edgeP[e.i]) closed.add(e.i);
+      for (const id in nodeP) if (rng() < nodeP[id]) down.add(id);
+      const res = planNetwork(closed, down);
+      if (res.comp.rel.length > 1) S.split++;
+      const load = {}; let lost = false;
+      for (const d of DESTS) {
+        const p = res.plans[d.id], st = S.dest[d.id];
+        st.tiers[p.tier]++;
+        if (p.tier >= 2) {
+          lost = true;
+          const k = p.nearestAlt || 'AIR'; st.alt[k] = (st.alt[k]||0) + 1;
+          if (p.nearestAlt) load[p.nearestAlt] = (load[p.nearestAlt]||0) + d.demand;
+        }
+        if (p.tier >= 1 && p.hours < Infinity) { st.extra += p.hours - BASE[d.id].hours; st.extraN++; }
+      }
+      if (lost) for (const ei of closed) S.edgeHits[ei]++;
+      for (const sid in load) S.altDemand[sid].push(load[sid]);
+    }
+    S.runs = i;
+    onChunk && onChunk(S);
+    if (i < runs) schedule(step); else onDone && onDone(S);
+  };
+  step();
+}
+
+const quantile = (arr, q) => { if (!arr.length) return 0; const s = [...arr].sort((a,b) => a-b); return s[Math.min(s.length-1, Math.floor(q * s.length))]; };
+const pct = x => Math.round(x * 100) + '%';
+const fmtTons = t => t.toLocaleString('en-US') + ' t';
+const listNames = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length-1];
+
+function buildRecs(S, active) {
+  const R = S.runs, recs = [], {edgeP} = riskModel(S.h, active);
+  const crossings = EDGES.filter(e => e.cross);
+  let firstH = null, firstX = null;
+  for (let h = 0; h < HORIZONS.length && firstH === null; h++) {
+    const ep = riskModel(h, active).edgeP;
+    const x = crossings.filter(e => ep[e.i] >= .5).sort((a, b) => ep[b.i] - ep[a.i])[0];
+    if (x) { firstH = h; firstX = x.name; }
+  }
+  const window = firstH === null ? 'the river crossings are still open' : firstH === 0 ? `${firstX} may already be failing, so use the safest open crossing` : `river crossings start failing from ${HORIZONS[firstH]} (${firstX} first)`;
+  const {nodeP} = riskModel(S.h, active);
+
+  for (const d of DESTS) {
+    const t = S.dest[d.id].tiers, pIso = t[3] / R;
+    if (pIso >= .08) {
+      const air = SUPPLIERS.filter(s => s.air && (nodeP[s.id] || 0) < .4).sort((a,b) => Math.hypot(a.x-d.x,a.y-d.y) - Math.hypot(b.x-d.x,b.y-d.y)).map(s => s.name);
+      recs.push({sev:3, icon:'✈', title:`Put airlift on standby for ${d.name}`,
+        body:`No land supplier can cover it in ${pct(pIso)} of simulated futures. Pre-book a helicopter/airdrop slot for ${d.demand} t/week from ${air[0]} (backup ${air[1]}) and notify partners.`});
+    }
+  }
+  for (const s of SUPPLIERS) {
+    const arr = S.altDemand[s.id], use = arr.length / R;
+    if (use < .12) continue;
+    const p90 = quantile(arr, .9), need = p90 * 2, gap = Math.ceil((need - s.stock) / 10) * 10;
+    const who = DESTS.filter(d => (S.dest[d.id].alt[s.id]||0) / R >= .08).map(d => d.name);
+    if (gap > 0) recs.push({sev:2, icon:'▲', title:`Pre-position ${gap} t at ${s.name}`,
+      body:`It is the fallback for ${listNames(who)} in ${pct(use)} of futures. In the 90th-percentile case it must cover ${p90} t/week (${need} t for 2 weeks) but holds ${s.stock} t. Move stock in from Port Bahari or Mlima now: ${window}.`});
+    else recs.push({sev:0, icon:'✓', title:`${s.name} can absorb its fallback load`,
+      body:`Fallback for ${listNames(who) || 'nearby sites'} in ${pct(use)} of futures. P90 demand ${p90} t/week; ${s.stock} t on hand covers ${(s.stock / Math.max(1,p90)).toFixed(1)} weeks.`});
+  }
+  const early = DESTS.map(d => ({d, lose:(S.dest[d.id].tiers[2] + S.dest[d.id].tiers[3]) / R})).filter(x => x.lose >= .35);
+  if (early.length) {
+    const tons = early.reduce((a, x) => a + x.d.demand * 2, 0), slowest = Math.max(...early.map(x => BASE[x.d.id].hours));
+    recs.push({sev:1, icon:'»', title:`Send 2 weeks of rations early to ${early.length} site${early.length > 1 ? 's' : ''} (${fmtTons(tons)})`,
+      body:`${listNames(early.map(x => `${x.d.name} (${pct(x.lose)})`))} lose their primary supplier in that share of futures. Dispatch now on the open primary routes. ${firstH === null ? `The longest trip takes ${slowest.toFixed(1)} h.` : slowest <= firstH * 24 ? `The longest trip takes ${slowest.toFixed(1)} h, so every truck arrives before ${HORIZONS[firstH]}.` : `Some trips take longer than the ${HORIZONS[firstH]} window, so load IPC 5 and 4 sites first.`}`});
+  }
+  const re = DESTS.filter(d => S.dest[d.id].tiers[1] / R >= .2).map(d => d.name);
+  if (re.length) recs.push({sev:1, icon:'↻', title:`Push alternate routes to drivers`,
+    body:`${listNames(re)} ${re.length > 1 ? 'need' : 'needs'} a detour in ≥20% of futures. Send offline route cards and SMS turn-by-turn to assigned drivers.`});
+  const worst = EDGES.map(e => ({e, hits:S.edgeHits[e.i]})).sort((a,b) => b.hits - a.hits)[0];
+  if (worst && worst.hits / R > .2) recs.push({sev:1, icon:'⚑', title:`Watch ${worst.e.name} closely`,
+    body:`It was closed in ${pct(worst.hits / R)} of the futures where a site lost its supplier, the most of any road (${pct(edgeP[worst.e.i])} failure risk at ${HORIZONS[S.h]}). Ask drivers to report its condition every 6 h.`});
+  return recs.sort((a, b) => b.sev - a.sev);
+}
+</script>
+
+<!-- ============================ UI ============================ -->
+<script>
+const $ = s => document.querySelector(s);
+const state = {
+  closed:new Set(), down:new Set(), h:2, active:new Set(HAZARDS.map(h => h.id)), selected:'DADU',
+  layers:{risk:true, hazards:true, comps:true, bridges:false, trucks:true, all:true},
+  result:null, mc:null, mcView:'chart', trucks:[], running:false,
+};
+const nm = id => N[id].name;
+const fmtH = h => h === Infinity ? '—' : h < 10 ? h.toFixed(1) + ' h' : Math.round(h) + ' h';
+const fmtK = n => n >= 1000 ? (n / 1000).toFixed(n % 1000 ? 1 : 0).replace('.0','') + 'K' : String(n);
+const fmtN = n => Math.round(n).toLocaleString('en-US');
+const ISLAND = ['#3987e5', '#d95926', '#199e70'];
+const ROAD_C = {H:'#55627c', G:'#46536b', D:'#3c475c', P:'#46536b'};
+const ROAD_W = {H:4.5, G:3, D:2.2, P:2.5};
+const ROAD_DASH = {H:'', G:'', D:'6 4', P:'2 4'};
+const ICONS = {
+  flood:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 15a4 4 0 0 1 .4-8A5 5 0 0 1 17 8.5a3.3 3.3 0 0 1 0 6.5z"/><path d="M8 18l-1 2M12 18l-1 2M16 18l-1 2"/></svg>',
+  cyclone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 7c-3-3-10-3-13 1s-1 9 4 9 7-4 4-6-6 0-4 2"/><path d="M4 17c3 3 10 3 13-1"/></svg>',
+  conflict:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h12l-2 4 2 4H5"/></svg>',
+  landslide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l6-10 4 6 3-4 5 8z"/><circle cx="17" cy="5" r="1.5"/></svg>',
+};
+
+function smoothPath(pts) {
+  const f = v => v.toFixed(1);
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || p2;
+    d += ` C${f(p1[0] + (p2[0]-p0[0])/6)} ${f(p1[1] + (p2[1]-p0[1])/6)} ${f(p2[0] - (p3[0]-p1[0])/6)} ${f(p2[1] - (p3[1]-p1[1])/6)} ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+}
+function lerpColor(a, b, t) {
+  const pa = [1,3,5].map(i => parseInt(a.substr(i,2),16)), pb = [1,3,5].map(i => parseInt(b.substr(i,2),16));
+  return '#' + pa.map((v, i) => Math.round(v + (pb[i]-v) * t).toString(16).padStart(2,'0')).join('');
+}
+const riskColor = p => lerpColor('#4a5670', '#c2417a', Math.min(1, Math.pow(p / .8, .85)));
+let riskCache = {};
+function currentRisk() {
+  const k = state.h + '|' + [...state.active].sort().join(',');
+  return riskCache[k] || (riskCache[k] = riskModel(state.h, state.active));
+}
+
+// ---------- static terrain ----------
+function drawTerrain() {
+  let s = `<rect width="1000" height="640" fill="#0d1729"/>`;
+  for (let x = 50; x < 1000; x += 50) s += `<line x1="${x}" y1="0" x2="${x}" y2="640" stroke="rgba(255,255,255,.025)"/>`;
+  for (let y = 50; y < 640; y += 50) s += `<line x1="0" y1="${y}" x2="1000" y2="${y}" stroke="rgba(255,255,255,.025)"/>`;
+  s += `<ellipse cx="150" cy="490" rx="190" ry="160" fill="#2b2412" opacity=".45"/>`;
+  s += `<ellipse cx="600" cy="62" rx="250" ry="78" fill="#15223b" opacity=".9"/>`;
+  [[410,40],[455,28],[540,30],[620,28],[660,46],[730,34],[790,52],[470,112],[810,90]].forEach(([x,y]) =>
+    s += `<path d="M${x-9} ${y+6} l9 -13 l9 13" fill="none" stroke="#2e4062" stroke-width="1.6" stroke-linejoin="round"/>`);
+  s += `<path d="M950 0 C930 70 965 140 942 215 S920 300 938 345 S965 430 948 485 S912 565 928 640 L1000 640 L1000 0 Z" fill="#081326"/>`;
+  s += `<path d="M950 0 C930 70 965 140 942 215 S920 300 938 345 S965 430 948 485 S912 565 928 640" fill="none" stroke="#1d3a5f" stroke-width="1.5"/>`;
+  const rp = smoothPath(RIVER);
+  s += `<path d="${rp}" fill="none" stroke="#1f5fa8" stroke-width="8" opacity=".55"/><path d="${rp}" fill="none" stroke="#3b82c4" stroke-width="2" opacity=".75"/>`;
+  s += `<text class="region" x="978" y="170" transform="rotate(90 978 170)" text-anchor="middle">BAHARI SEA</text>`;
+  s += `<text class="region" x="575" y="634" transform="rotate(-82 575 634)">KORA RIVER</text>`;
+  s += `<text class="region" x="800" y="128">MLIMA HIGHLANDS</text>`;
+  s += `<text class="region" x="22" y="628">JANGWA DRYLANDS</text>`;
+  $('#g-terrain').innerHTML = s;
+}
+
+// ---------- map render ----------
+function renderMap() {
+  const {edgeP, nodeP} = currentRisk(), res = state.result, L = state.layers;
+
+  // hazards
+  let hz = '';
+  if (L.hazards) for (const h of HAZARDS) {
+    if (!state.active.has(h.id)) continue;
+    const p = h.p[state.h], s = h.shape;
+    if (s.type === 'circle') {
+      hz += `<g class="pulse" opacity="${(.25 + .7*p).toFixed(2)}"><circle cx="${s.x}" cy="${s.y}" r="${s.r}" fill="${h.color}" fill-opacity=".14"/>`
+         +  `<circle cx="${s.x}" cy="${s.y}" r="${s.r}" fill="none" stroke="${h.color}" stroke-opacity=".55" stroke-dasharray="4 6"/></g>`;
+    } else {
+      const pts = RIVER.filter(q => q[1] >= s.minY - 30);
+      hz += `<path class="pulse" d="${smoothPath(pts)}" fill="none" stroke="${h.color}" stroke-width="${s.w * 1.2}" stroke-linecap="round" opacity="${(.06 + .2*p).toFixed(2)}"/>`;
+    }
+    const label = `${h.short} · ${pct(p)}`, w = label.length * 6.3 + 22;
+    hz += `<g transform="translate(${h.tag[0]} ${h.tag[1]})"><rect x="${-w/2}" y="-11" width="${w}" height="21" rx="10.5" fill="#0a1120" stroke="${h.color}" stroke-opacity=".8"/>`
+       +  `<circle cx="${-w/2 + 11}" cy="-.5" r="4" fill="${h.color}"/><text x="${-w/2 + 20}" y="3.5" style="font-size:11px;font-weight:650;fill:#e3e9f3">${label}</text></g>`;
+  }
+  $('#g-hazards').innerHTML = hz;
+
+  // network islands (convex hull blobs)
+  let cs = '';
+  const rel = res.comp.rel;
+  if (L.comps && rel.length > 1) rel.forEach((g, k) => {
+    const col = ISLAND[k] || '#6b7280';
+    const hull = convexHull(g.nodes.map(id => [N[id].x, N[id].y]));
+    const d = 'M' + hull.map(p => p.join(' ')).join(' L') + (hull.length > 2 ? ' Z' : '');
+    cs += `<g opacity=".16"><path d="${d}" fill="${col}" stroke="${col}" stroke-width="58" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+  });
+  $('#g-comps').innerHTML = cs;
+
+  // critical roads
+  let bs = '';
+  if (L.bridges) for (const i of criticalRoads(state.closed, state.down)) {
+    const e = EDGES[i], A = N[e.a], B = N[e.b];
+    bs += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity=".16"/>`;
+  }
+  $('#g-bridges').innerHTML = bs;
+
+  // roads
+  let es = '', hits = '', cuts = '', xl = '';
+  for (const e of EDGES) {
+    const A = N[e.a], B = N[e.b], closed = state.closed.has(e.i), p = edgeP[e.i];
+    if (closed) {
+      es += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#d03b3b" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round" opacity=".9"/>`;
+      const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+      cuts += `<g transform="translate(${mx} ${my})"><circle r="8.5" fill="#2a0f12" stroke="#d03b3b" stroke-width="1.6"/><path d="M-3.5 -3.5 L3.5 3.5 M3.5 -3.5 L-3.5 3.5" stroke="#ff8a8a" stroke-width="2.2" stroke-linecap="round"/></g>`;
+    } else {
+      const col = L.risk ? riskColor(p) : ROAD_C[e.t], w = ROAD_W[e.t] + (L.risk ? p * 2.5 : 0);
+      es += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${col}" stroke-width="${w.toFixed(1)}" stroke-linecap="round" ${ROAD_DASH[e.t] ? `stroke-dasharray="${ROAD_DASH[e.t]}"` : ''}/>`;
+    }
+    hits += `<line class="road-hit" data-edge="${e.i}" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"/>`;
+    if (e.cross) {
+      const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2 + (e.name === 'Kusini Ferry' ? 20 : -12);
+      xl += `<text class="xlbl" x="${mx}" y="${my}" text-anchor="middle">${e.name}</text>`;
+    }
+  }
+  $('#g-edges').innerHTML = es + xl;
+  $('#g-hits').innerHTML = hits;
+  $('#g-cuts').innerHTML = cuts;
+
+  // routes
+  let rs = '';
+  const order = DESTS.filter(d => d.id !== state.selected).concat([N[state.selected]]);
+  for (const d of order) {
+    const sel = d.id === state.selected;
+    if (!sel && !L.all) continue;
+    const p = res.plans[d.id], col = TIERS[p.tier].color;
+    if (sel && p.tier > 0) rs += `<polyline points="${ptsOf(BASE[d.id].nodes)}" class="route" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="2 6" opacity=".55"/>`;
+    for (const s of p.sources) {
+      if (sel) rs += `<polyline points="${ptsOf(s.nodes)}" class="route" stroke="${col}" stroke-width="10" opacity=".22" filter="url(#glow)"/>`;
+      rs += `<polyline points="${ptsOf(s.nodes)}" class="route" stroke="#0b1426" stroke-width="${sel ? 8 : 5.5}" opacity="${sel ? .9 : .6}"/>`;
+      rs += `<polyline points="${ptsOf(s.nodes)}" class="route ${sel ? 'sel' : ''}" stroke="${col}" stroke-width="${sel ? 4.5 : 2.5}" opacity="${sel ? 1 : .7}"/>`;
+    }
+    if (p.airlift) rs += `<path d="${arcPath(N[p.airlift.sid], d)}" class="route ${sel ? 'sel' : ''}" stroke="#d03b3b" stroke-width="${sel ? 3 : 2}" stroke-dasharray="8 7" opacity="${sel ? 1 : .6}"/>`;
+  }
+  $('#g-routes').innerHTML = rs;
+  $('#g-trucks').style.display = L.trucks ? '' : 'none';
+
+  // nodes
+  let ns = '';
+  for (const n of NODES) {
+    const down = state.down.has(n.id), [dx, dy, anchor] = n.lp || [0,0,'middle'];
+    if (n.type === 'J') {
+      ns += `<circle cx="${n.x}" cy="${n.y}" r="3.6" fill="#6b7790" style="pointer-events:none"/>`;
+      if (n.lp) ns += `<text class="sub" x="${n.x + dx}" y="${n.y + dy}" text-anchor="${anchor}">${n.name}</text>`;
+      continue;
+    }
+    let sub, glyph;
+    if (n.type === 'S') {
+      const left = res.stock[n.id], np = nodeP[n.id];
+      sub = down ? 'OFFLINE' : `${fmtN(n.stock - left)} / ${fmtN(n.stock)} t${n.air ? ' · ✈ airstrip' : ''}`;
+      glyph = `<rect x="-11" y="-11" width="22" height="22" rx="5" fill="${down ? '#2a1418' : '#10213d'}" stroke="${down ? '#d03b3b' : '#3987e5'}" stroke-width="2"/>`
+            + `<path d="M-6 1 L0 -5 L6 1 V6 H-6 Z M-2 6 V2 H2 V6" fill="none" stroke="${down ? '#ff8a8a' : '#9cc4f5'}" stroke-width="1.6" stroke-linejoin="round"/>`
+            + (np && np > .3 && !down ? `<circle cx="11" cy="-11" r="5" fill="#9085e9" stroke="#0b1426" stroke-width="1.5"/>` : '')
+            + (down ? `<path d="M-14 -14 L14 14 M14 -14 L-14 14" stroke="#d03b3b" stroke-width="2.5" stroke-linecap="round"/>` : '');
+    } else {
+      const ipc = IPC[n.ipc], p = res.plans[n.id];
+      sub = `${fmtK(n.people)} people · ${n.demand} t/wk`;
+      glyph = (n.id === state.selected ? `<circle r="17" class="sel-ring"/>` : '')
+            + `<circle r="10.5" fill="${ipc.color}" stroke="#eef2f8" stroke-width="1.6"/>`
+            + `<text y="4" text-anchor="middle" style="font-size:10.5px;font-weight:800;fill:${ipc.ink};pointer-events:none">${n.ipc}</text>`
+            + (p.tier > 0 ? `<circle r="14.5" fill="none" stroke="${TIERS[p.tier].color}" stroke-width="2.5"/>` : '');
+    }
+    ns += `<g class="node" data-node="${n.id}" transform="translate(${n.x} ${n.y})">${glyph}</g>`;
+    ns += `<text class="lbl" x="${n.x + dx}" y="${n.y + dy}" text-anchor="${anchor}">${n.name}</text>`;
+    ns += `<text class="sub" x="${n.x + dx}" y="${n.y + dy + 12}" text-anchor="${anchor}" ${down ? 'style="fill:#ff8a8a;font-weight:700"' : ''}>${sub}</text>`;
+  }
+  $('#g-nodes').innerHTML = ns;
+}
+const ptsOf = ids => ids.map(id => `${N[id].x},${N[id].y}`).join(' ');
+function arcCtrl(a, b) { const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dist = Math.hypot(b.x - a.x, b.y - a.y); return [mx, my - Math.min(160, dist * .35)]; }
+function arcPath(a, b) { const [cx, cy] = arcCtrl(a, b); return `M${a.x} ${a.y} Q${cx} ${cy} ${b.x} ${b.y}`; }
+function convexHull(pts) {
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cross = (o, a, b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cross(lo[lo.length-2], lo[lo.length-1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of [...p].reverse()) { while (up.length >= 2 && cross(up[up.length-2], up[up.length-1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function islandName(g) {
+  if (!g.sup.length && g.dst.length === 1) return `${nm(g.dst[0])} (cut off)`;
+  const cx = g.nodes.reduce((a, id) => a + N[id].x, 0) / g.nodes.length;
+  return cx > 520 ? 'East bank' : 'West bank';
+}
+
+// ---------- trucks ----------
+function buildTrucks() {
+  const t = [];
+  for (const d of DESTS) {
+    const p = state.result.plans[d.id], col = TIERS[p.tier].color;
+    for (const s of p.sources) {
+      const pts = s.nodes.map(id => [N[id].x, N[id].y]);
+      if (pts.length > 1) t.push({pts, col, phase:Math.random()});
+    }
+    if (p.airlift) {
+      const a = N[p.airlift.sid], [cx, cy] = arcCtrl(a, d), pts = [];
+      for (let k = 0; k <= 30; k++) { const u = k / 30; pts.push([(1-u)*(1-u)*a.x + 2*(1-u)*u*cx + u*u*d.x, (1-u)*(1-u)*a.y + 2*(1-u)*u*cy + u*u*d.y]); }
+      t.push({pts, col:'#d03b3b', phase:Math.random(), air:true});
+    }
+  }
+  for (const tr of t) {
+    tr.seg = []; tr.len = 0;
+    for (let k = 1; k < tr.pts.length; k++) { const l = Math.hypot(tr.pts[k][0]-tr.pts[k-1][0], tr.pts[k][1]-tr.pts[k-1][1]); tr.seg.push(l); tr.len += l; }
+  }
+  state.trucks = t;
+  $('#g-trucks').innerHTML = t.map(tr => tr.air
+    ? `<text text-anchor="middle" dy="5" style="font-size:16px;fill:#ff9a9a">✈</text>`
+    : `<circle r="4.5" fill="${tr.col}" stroke="#0b1426" stroke-width="2"/>`).join('');
+}
+function pointAlong(tr, dist) {
+  let d = dist;
+  for (let k = 0; k < tr.seg.length; k++) {
+    if (d <= tr.seg[k]) { const u = tr.seg[k] ? d / tr.seg[k] : 0, a = tr.pts[k], b = tr.pts[k+1]; return [a[0] + (b[0]-a[0])*u, a[1] + (b[1]-a[1])*u]; }
+    d -= tr.seg[k];
+  }
+  return tr.pts[tr.pts.length - 1];
+}
+function animateTrucks(now) {
+  const els = $('#g-trucks').children;
+  state.trucks.forEach((tr, k) => {
+    const el = els[k]; if (!el) return;
+    const travel = tr.len / (tr.air ? 110 : 55) + 1.2;     // seconds per trip incl. unloading pause
+    const u = ((now / 1000) / travel + tr.phase) % 1, dist = Math.min(1, u * travel / (travel - 1.2)) * tr.len;
+    const [x, y] = pointAlong(tr, dist);
+    el.setAttribute(tr.air ? 'x' : 'cx', x.toFixed(1)); el.setAttribute(tr.air ? 'y' : 'cy', y.toFixed(1));
+  });
+  heroFrame(now);
+  requestAnimationFrame(animateTrucks);
+}
+
+// ---------- banner / panels ----------
+function renderBanner() {
+  const rel = state.result.comp.rel, open = EDGES.length - state.closed.size;
+  const tiers = [0,0,0,0]; for (const d of DESTS) tiers[state.result.plans[d.id].tier]++;
+  let s = '';
+  if (rel.length <= 1) s += `<span class="pill ok"><i style="background:#0ca30c"></i>Network connected · ${open}/${EDGES.length} roads open</span>`;
+  else {
+    s += `<span class="pill crit"><i style="background:#d03b3b"></i>Network split into ${rel.length} islands</span>`;
+    rel.forEach((g, k) => s += `<span class="pill"><i style="background:${ISLAND[k] || '#6b7280'}"></i>${islandName(g)} · ${g.sup.length} supplier${g.sup.length === 1 ? '' : 's'}</span>`);
+  }
+  if (state.down.size) s += `<span class="pill crit">Offline: ${[...state.down].map(nm).join(', ')}</span>`;
+  const t = TIERS.map((T, k) => tiers[k] && k ? `${tiers[k]} ${T.label.toLowerCase()}` : '').filter(Boolean);
+  if (t.length) s += `<span class="pill">${t.join(' · ')}</span>`;
+  $('#banner').innerHTML = s;
+}
+
+function renderPlan() {
+  const d = N[state.selected], p = state.result.plans[d.id], ipc = IPC[d.ipc], T = TIERS[p.tier], base = BASE[d.id];
+  const prim = nm(d.primary);
+  let reason;
+  if (p.tier === 0) reason = `Primary pipeline from <b>${prim}</b> is open on the planned route.`;
+  else if (p.tier === 1) {
+    const via = p.sources[0].edges.map(i => EDGES[i]).filter(e => e.cross).map(e => e.name);
+    reason = `A road on the planned route is closed, but <b>${prim}</b> is still reachable. Shortest detour${via.length ? ` via <b>${via.join(', ')}</b>` : ''} adds <b>+${fmtH(p.hours - base.hours)}</b>.`;
+  } else {
+    const why = p.primaryDown ? `<b>${prim}</b> is offline.` : !p.primaryReachable ? `The road network has split and <b>${prim}</b> is on another island, so no detour exists.` : `<b>${prim}</b>'s stock is committed to higher-priority sites.`;
+    if (p.tier === 2) reason = `${why} Re-sourced from the nearest supplier${p.sources.length > 1 ? 's' : ''} still connected to this site, ranked by travel time and available stock.`;
+    else {
+      const land = p.sources.reduce((a, s) => a + s.tons, 0);
+      reason = why + (land ? ` Suppliers still in reach can cover only <b>${land} t</b> of ${d.demand} t.` : ` No supplier with stock can reach this site by road.`)
+        + (p.airlift ? ` Shortfall of <b>${p.shortfall} t</b> goes to airlift from <b>${nm(p.airlift.sid)}</b>.` : ` No airstrip available, so this is escalated to partners.`);
+    }
+  }
+  const shortD = d.short;
+  let rows = '';
+  if (p.tier > 0) rows += `<div class="cmp-row was"><span class="k">Planned</span><span class="v"><b>${N[d.primary].short} → ${shortD}</b><em>${fmtH(base.hours)} · ${base.km} km</em></span></div>`;
+  p.sources.forEach((s, k) => rows += `<div class="cmp-row"><span class="k">${k ? '+' : p.tier ? 'Now' : 'Route'}</span><span class="v"><b>${N[s.sid].short} → ${shortD}</b> · ${s.tons} t<em>${fmtH(s.hours)} · ${s.km} km${p.tier && !k ? ` · ${s.hours >= base.hours ? '+' : '−'}${fmtH(Math.abs(s.hours - base.hours))} vs plan` : ''}</em></span></div>`);
+  if (p.airlift) rows += `<div class="cmp-row"><span class="k">${p.sources.length ? '+' : 'Now'}</span><span class="v"><b>✈ ${N[p.airlift.sid].short} → ${shortD}</b> · ${p.airlift.tons} t<em>${fmtH(p.airlift.hours)} · ${p.airlift.km} km by air</em></span></div>`;
+  if (!p.sources.length && !p.airlift) rows += `<div class="cmp-row"><span class="k">Now</span><span class="v"><b>No supply possible</b><em>escalated</em></span></div>`;
+  let path = '';
+  if (p.sources[0]) {
+    const s = p.sources[0];
+    s.nodes.forEach((id, k) => {
+      if (k) { const e = EDGES[s.edges[k-1]]; path += e.cross ? `<b>›</b><span class="x">${e.name}</span>` : ''; path += '<b>›</b>'; }
+      path += `<span>${N[id].short}</span>`;
+    });
+  }
+  $('#plan-panel').innerHTML = `
+    <h4>Delivery plan <small>${HORIZONS[state.h]} outlook</small></h4>
+    <span class="pd-ipc" style="background:${ipc.color};color:${ipc.ink}">IPC Phase ${d.ipc} · ${ipc.name}</span>
+    <div class="pd-name">${d.name}</div>
+    <div class="muted" style="font-size:12.5px">${fmtN(d.people)} people · ${d.demand} t / week</div>
+    <div class="tier-badge"><i style="background:${T.color}">${T.icon}</i>Tier ${p.tier} · ${T.label}</div>
+    <p class="reason">${reason}</p>
+    <div class="cmp">${rows}</div>
+    ${path ? `<div class="path">${path}</div>` : ''}
+    <button class="btn btn-primary btn-sm" id="dispatch" style="width:100%">Send plan to drivers & partners</button>`;
+  $('#dispatch').onclick = () => {
+    const drivers = 2 + Math.ceil(d.demand / 30);
+    toast(`📲 Plan for ${d.name} sent: ${drivers} drivers notified by SMS, field partner briefed.`);
+    log(`<span class="ok">DISPATCH</span> ${d.name}: ${p.sources.map(s => `${s.tons} t from ${nm(s.sid)}`).concat(p.airlift ? [`${p.airlift.tons} t airlift from ${nm(p.airlift.sid)}`] : []).join(' + ')} · ${drivers} drivers paged via SMS`);
+  };
+}
+
+function renderDestList() {
+  $('#dest-list').innerHTML = DESTS.map(d => {
+    const p = state.result.plans[d.id], T = TIERS[p.tier];
+    return `<button class="dl-row ${d.id === state.selected ? 'on' : ''}" data-dest="${d.id}">
+      <span class="dl-dot" style="background:${IPC[d.ipc].color}"></span>
+      <span class="dl-name">${d.name}<small>${fmtK(d.people)}</small></span>
+      <span class="tchip"><i style="background:${T.color}">${T.icon}</i>${p.tier ? T.label : fmtH(p.hours)}</span></button>`;
+  }).join('');
+}
+function renderStock() {
+  $('#stock').innerHTML = SUPPLIERS.map(s => {
+    const down = state.down.has(s.id), used = s.stock - state.result.stock[s.id], w = down ? 0 : Math.min(100, used / s.stock * 100);
+    return `<div class="sm-row ${down ? 'off' : ''}"><span>${s.name}</span><span class="n">${down ? 'offline' : `${fmtN(used)} / ${fmtN(s.stock)} t`}</span>
+      <div class="meter"><span style="width:${w}%;${w > 85 ? 'background:#ec835a' : ''}"></span></div></div>`;
+  }).join('');
+}
+
+function renderControls() {
+  $('#horizon').innerHTML = HORIZONS.map((h, k) => `<button data-h="${k}" class="${k === state.h ? 'on' : ''}">${h}</button>`).join('');
+  $('#alerts').innerHTML = HAZARDS.map(h => {
+    const on = state.active.has(h.id), max = Math.max(...h.p);
+    return `<div class="alert ${on ? '' : 'off'}" style="--c:${h.color}">
+      <div class="al-ico">${ICONS[h.kind]}</div>
+      <div><div class="al-title">${h.title}</div><div class="al-src">${h.src}</div>
+        <div class="al-spark">${h.p.map((p, k) => `<i class="${k === state.h ? 'cur' : ''}" style="height:${Math.max(3, p / max * 18)}px" data-tip="<b>${HORIZONS[k]}</b>: ${pct(p)} probability"></i>`).join('')}</div>
+        <div class="al-spark-l">${HORIZONS.map(h => `<span>${h.replace('+','')}</span>`).join('')}</div></div>
+      <div class="al-right"><span class="al-p">${pct(h.p[state.h])}</span><label class="switch"><input type="checkbox" data-hz="${h.id}" ${on ? 'checked' : ''}><span></span></label></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAll() { renderMap(); renderBanner(); renderPlan(); renderDestList(); renderStock(); }
+
+// ---------- re-planning + engine log ----------
+function replan(reason, cls = 'warn') {
+  const prev = state.result, t0 = performance.now();
+  state.result = planNetwork(state.closed, state.down);
+  const ms = performance.now() - t0;
+  if (reason) log(`<span class="${cls}">${reason}</span>`);
+  if (prev) {
+    const a = prev.comp.rel.length, b = state.result.comp.rel.length;
+    if (b > a) {
+      log(`<span class="crit">NETWORK SPLIT</span> graph now has ${b} islands with sites. Detouring alone can't fix this, so re-sourcing by island:`);
+      state.result.comp.rel.forEach((g, k) => log(`&nbsp;&nbsp;<span class="dim">#${k+1}</span> ${islandName(g)}: ${g.nodes.length} nodes · suppliers: ${g.sup.map(nm).join(', ') || '<span class="crit">none</span>'}`));
+    } else if (b < a) log(`<span class="ok">CONNECTIVITY RESTORED</span> ${b === 1 ? 'single connected network' : b + ' islands'}`);
+    for (const d of DESTS) {
+      const o = prev.plans[d.id], n = state.result.plans[d.id];
+      const sig = p => p.tier + '|' + p.sources.map(s => s.sid + s.tons + s.hours.toFixed(2)).join(',') + '|' + (p.airlift ? p.airlift.sid : '');
+      if (sig(o) === sig(n)) continue;
+      const T = TIERS[n.tier];
+      let what;
+      if (n.tier === 0) what = `back on plan · ${nm(d.primary)} ${fmtH(n.hours)}`;
+      else if (n.tier === 1) what = `detour from ${nm(d.primary)} · ${fmtH(n.hours)} (+${fmtH(n.hours - BASE[d.id].hours)})`;
+      else {
+        const src = n.sources.map(s => `${nm(s.sid)} ${s.tons} t · ${fmtH(s.hours)}`).join(' + ');
+        what = (n.primaryDown ? 'primary offline' : !n.primaryReachable ? 'primary on another island' : 'primary stock committed') + ` → ${src || 'no land supplier'}`
+          + (n.airlift ? ` + ✈ ${n.airlift.tons} t from ${nm(n.airlift.sid)}` : '');
+      }
+      log(`<span class="hl">${d.name}</span> <span style="color:${T.color}">T${n.tier} ${T.label.toUpperCase()}</span> ${what}`);
+    }
+    log(`<span class="dim">re-planned ${DESTS.length} sites · ${NODES.length} nodes · ${EDGES.length - state.closed.size} open roads in ${ms.toFixed(1)} ms</span>`);
+  }
+  buildTrucks(); renderAll();
+}
+function log(html) {
+  const el = $('#log'), t = new Date().toTimeString().slice(0, 8);
+  el.insertAdjacentHTML('beforeend', `<div><span class="ts">${t}</span> ${html}</div>`);
+  while (el.children.length > 200) el.firstChild.remove();
+  el.scrollTop = el.scrollHeight;
+}
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3200); }
+
+// ---------- scenarios ----------
+const CROSSINGS = ['Kati Bridge', 'Kaskazini Bridge', 'Kusini Ferry', 'Highland Pass'];
+const SCENARIOS = {
+  washout:{closed:['Kati Bridge'], down:[], msg:'DRIVER REPORT Kati Bridge (A2) washed out. Bridge closed.'},
+  flood:{closed:CROSSINGS, down:[], msg:'FLOOD Kora River over its banks: Kati, Kaskazini, Kusini Ferry and Highland Pass all closed.'},
+  compound:{closed:[...CROSSINGS, 'Track T5', 'Track T6', 'C4', 'Coast Road'], down:['PORT'], msg:'COMPOUND EVENT River flood + Cyclone Ada closes Port Bahari + armed clashes block all roads to Upper Mto.'},
+};
+function applyScenario(key) {
+  if (key === 'reset') { state.closed.clear(); state.down.clear(); replan('RESET all roads reopened, all suppliers online', 'ok'); return; }
+  const s = SCENARIOS[key];
+  state.closed = new Set(s.closed.map(edgeByName)); state.down = new Set(s.down);
+  replan(s.msg, 'crit');
+  const pick = DESTS.find(d => state.result.plans[d.id].tier === (key === 'compound' ? 3 : key === 'flood' ? 2 : 1));
+  if (pick) { state.selected = pick.id; renderAll(); }
+}
+function applyForecast() {
+  const {edgeP, nodeP} = currentRisk();
+  state.closed = new Set(EDGES.filter(e => edgeP[e.i] >= .5).map(e => e.i));
+  state.down = new Set(Object.keys(nodeP).filter(id => nodeP[id] >= .5));
+  const names = [...state.closed].map(i => EDGES[i].name);
+  replan(`FORECAST ${HORIZONS[state.h]}: ${state.closed.size} roads ≥50% failure risk${names.length ? ' (' + names.join(', ') + ')' : ''}${state.down.size ? '; ' + [...state.down].map(nm).join(', ') + ' likely offline' : ''}`, state.closed.size ? 'warn' : 'ok');
+}
+
+// ---------- Monte Carlo UI ----------
+function runMC() {
+  if (state.running) return;
+  state.running = true;
+  const btn = $('#run-mc'); btn.disabled = true;
+  const runs = 2000, t0 = performance.now();
+  log(`<span class="hl">MONTE CARLO</span> sampling ${fmtN(runs)} futures at ${HORIZONS[state.h]} · hazards: ${[...state.active].map(id => HAZARDS.find(h => h.id === id).short).join(', ') || 'none'}`);
+  monteCarlo({runs, h:state.h, active:new Set(state.active), schedule:f => requestAnimationFrame(f)},
+    S => { $('#mc-prog').style.width = (S.runs / runs * 100) + '%'; $('#run-label').textContent = `Simulating… ${fmtN(S.runs)} / ${fmtN(runs)}`; state.mc = S; renderMC(); },
+    S => {
+      state.running = false; btn.disabled = false; $('#mc-prog').style.width = '0';
+      $('#run-label').textContent = 'Re-run 2,000 simulations';
+      state.mc = S; state.mcActive = new Set(state.active); renderMC(true);
+      const R = S.runs;
+      log(`<span class="ok">MONTE CARLO DONE</span> in ${(performance.now() - t0).toFixed(0)} ms · network split in ${pct(S.split / R)} of futures · ${state.recs.length} actions recommended`);
+    });
+}
+function renderMC(final) {
+  const S = state.mc, el = $('#mc');
+  if (!S) {
+    el.innerHTML = `<div class="mc-empty">Pick a forecast horizon and hit <b style="color:var(--text)">Run 2,000 simulations</b>.<br>The engine samples road failures from the live hazard picture, re-plans the whole network for each future, and shows how often each site would lose its supply line, with or without fallback planning.</div>`;
+    return;
+  }
+  const R = S.runs || 1;
+  let cut = 0, still = 0;
+  for (const d of DESTS) { const t = S.dest[d.id].tiers; cut += d.people * (t[2] + t[3]) / R; still += d.people * t[3] / R; }
+  $('#mc-meta').textContent = `${fmtN(S.runs)} futures · ${HORIZONS[S.h]} · seed ${seedFor(S.h, state.mcActive || state.active).toString(16).slice(0,6)}`;
+  const kpis = `<div class="kpis">
+    <div class="kpi"><div class="l">Network split probability</div><div class="v">${pct(S.split / R)}</div><div class="d">futures where the road graph breaks into islands</div></div>
+    <div class="kpi"><div class="l">People cut off · reroute-only</div><div class="v">${fmtK(Math.round(cut / 100) * 100)}</div><div class="d">expected, if we could only detour</div></div>
+    <div class="kpi"><div class="l">Still cut off by road · with Lifeline</div><div class="v">${fmtK(Math.round(still / 100) * 100)}</div><div class="d good">${cut ? '↓ ' + pct(1 - still / cut) + ' re-sourced by road, rest airlifted' : 'no disruption expected'}</div></div>
+    <div class="kpi"><div class="l">Fallback plans evaluated</div><div class="v">${fmtK(S.runs * DESTS.length)}</div><div class="d">${DESTS.length} sites × ${fmtN(S.runs)} futures</div></div>
+  </div>`;
+  const legend = `<div class="chart-head"><div class="chart-legend">${TIERS.map(T => `<span><i style="background:${T.color}">${T.icon}</i>${T.label}</span>`).join('')}</div>
+    <div class="view-toggle"><button data-view="chart" class="${state.mcView === 'chart' ? 'on' : ''}">Chart</button><button data-view="table" class="${state.mcView === 'table' ? 'on' : ''}">Table</button></div></div>`;
+  let body;
+  if (state.mcView === 'chart') {
+    body = DESTS.map(d => {
+      const st = S.dest[d.id], t = st.tiers, ipc = IPC[d.ipc];
+      const top = Object.entries(st.alt).sort((a, b) => b[1] - a[1])[0];
+      const lost = t[2] + t[3];
+      const segs = t.map((v, k) => v ? `<span style="flex:${v};background:${TIERS[k].color}" data-tip="<b>${d.name}</b><br>${TIERS[k].icon} ${TIERS[k].label}: <b>${pct(v / R)}</b> of futures (${fmtN(v)})"></span>` : '').join('');
+      return `<div class="mc-row"><div class="mc-name"><span class="ipc-chip" style="background:${ipc.color};color:${ipc.ink}">${d.ipc}</span>${d.name}<small>${fmtK(d.people)}</small></div>
+        <div class="mc-bar">${segs}</div>
+        <div class="mc-alt">${top ? `fallback: <b>${top[0] === 'AIR' ? '✈ airlift' : N[top[0]].short}</b> ${pct(top[1] / Math.max(1, lost))}` : '<span class="muted">primary holds</span>'}</div></div>`;
+    }).join('') + `<div class="mc-axis"><span></span><div><span>0%</span><span>50%</span><span>100% of futures</span></div><span></span></div>`;
+  } else {
+    body = `<table class="mc-table"><thead><tr><th>Site</th><th>IPC</th><th>People</th>${TIERS.map(T => `<th>${T.icon} ${T.label}</th>`).join('')}<th>Avg. time vs plan</th><th>Top fallback</th></tr></thead><tbody>` +
+      DESTS.map(d => { const st = S.dest[d.id], top = Object.entries(st.alt).sort((a, b) => b[1] - a[1])[0];
+        return `<tr><td>${d.name}</td><td>${d.ipc}</td><td>${fmtN(d.people)}</td>${st.tiers.map(v => `<td>${pct(v / R)}</td>`).join('')}<td>${st.extraN ? (st.extra >= 0 ? '+' : '−') + fmtH(Math.abs(st.extra / st.extraN)) : '—'}</td><td>${top ? (top[0] === 'AIR' ? 'Airlift' : nm(top[0])) : '—'}</td></tr>`; }).join('') + `</tbody></table>`;
+  }
+  let recs = '';
+  if (final || state.recs) {
+    if (final) state.recs = buildRecs(S, state.mcActive || state.active);
+    const sevCol = ['#0ca30c', '#fab219', '#ec835a', '#d03b3b'];
+    recs = `<h4 style="margin-top:20px">Recommended actions <small>ranked by severity</small></h4><div class="recs">` + state.recs.map((r, k) =>
+      `<div class="rec"><div class="ri" style="background:${sevCol[r.sev]}">${r.icon}</div><div><b>${r.title}</b><p>${r.body}</p></div>
+       <button class="btn btn-ghost btn-sm ${r.done ? 'done' : ''}" data-rec="${k}">${r.done ? 'Approved ✓' : 'Approve'}</button></div>`).join('') + `</div>`;
+  }
+  el.innerHTML = kpis + legend + body + recs;
+}
+
+// ---------- tooltip ----------
+const tip = $('#tip');
+function showTip(html, ev) { tip.innerHTML = html; tip.classList.add('show'); moveTip(ev); }
+function moveTip(ev) { const w = tip.offsetWidth, h = tip.offsetHeight; let x = ev.clientX + 14, y = ev.clientY + 14; if (x + w > innerWidth - 8) x = ev.clientX - w - 14; if (y + h > innerHeight - 8) y = ev.clientY - h - 14; tip.style.left = x + 'px'; tip.style.top = y + 'px'; }
+function hideTip() { tip.classList.remove('show'); }
+function edgeTip(i) {
+  const e = EDGES[i], {edgeP, drivers} = currentRisk(), closed = state.closed.has(i);
+  const users = DESTS.filter(d => state.result.plans[d.id].sources.some(s => s.edges.includes(i))).map(d => d.short);
+  const crit = criticalRoads(state.closed, state.down).includes(i);
+  return `<b>${e.name}</b> <span class="muted">${nm(e.a)} ↔ ${nm(e.b)}</span><br>${ROAD_NAME[e.t]} · ${e.km} km · ${fmtH(e.hours)}${e.delay ? ` (incl. ${e.delay} h ${e.name.includes('Ferry') ? 'ferry' : 'checkpoint'})` : ''}<br>
+    Failure risk ${HORIZONS[state.h]}: <b>${pct(edgeP[i])}</b>${drivers[i].length ? ' <span class="muted">· ' + drivers[i].map(d => `${d.hz.short} ${pct(d.p)}`).join(', ') + '</span>' : ''}<br>
+    ${users.length ? `Carries: ${users.join(', ')}<br>` : ''}${crit && !closed ? '<b style="color:#fab219">⚠ Critical road</b>: its loss splits the network<br>' : ''}Status: <b style="color:${closed ? '#ff8a8a' : '#5fd35f'}">${closed ? 'CLOSED' : 'open'}</b> · <span class="muted">click to ${closed ? 'reopen' : 'close'}</span>`;
+}
+function nodeTip(id) {
+  const n = N[id], {nodeP} = currentRisk();
+  if (n.type === 'S') {
+    const down = state.down.has(id), used = n.stock - state.result.stock[id];
+    return `<b>${n.name}</b><br>${n.kind}${n.air ? ' · airstrip' : ''}<br>Stock ${fmtN(n.stock)} t · committed ${fmtN(used)} t${nodeP[id] ? `<br>Closure risk ${HORIZONS[state.h]}: <b>${pct(nodeP[id])}</b>` : ''}<br><span class="muted">click to take ${down ? 'back online' : 'offline'}</span>`;
+  }
+  const p = state.result.plans[id];
+  return `<b>${n.name}</b><br>IPC Phase ${n.ipc} (${IPC[n.ipc].name}) · ${fmtN(n.people)} people<br>Needs ${n.demand} t/week · primary: ${nm(n.primary)}<br>Status: <b>${TIERS[p.tier].icon} ${TIERS[p.tier].label}</b> · ETA ${fmtH(p.hours)}`;
+}
+
+// ---------- events ----------
+function bind() {
+  const map = $('#map');
+  map.addEventListener('click', ev => {
+    const e = ev.target.closest('[data-edge]'), n = ev.target.closest('[data-node]');
+    if (n) {
+      const id = n.dataset.node;
+      if (N[id].type === 'D') { state.selected = id; renderAll(); return; }
+      if (state.down.has(id)) { state.down.delete(id); replan(`SUPPLIER ONLINE ${nm(id)} back in service`, 'ok'); }
+      else { state.down.add(id); replan(`SUPPLIER OFFLINE ${nm(id)} reported unavailable`, 'crit'); }
+      hideTip(); return;
+    }
+    if (e) {
+      const i = +e.dataset.edge, E = EDGES[i];
+      if (state.closed.has(i)) { state.closed.delete(i); replan(`ROAD REOPENED ${E.name} (${nm(E.a)} ↔ ${nm(E.b)})`, 'ok'); }
+      else { state.closed.add(i); replan(`ROAD CLOSED ${E.name} (${nm(E.a)} ↔ ${nm(E.b)}), driver report`, 'warn'); }
+      showTip(edgeTip(i), ev);
+    }
+  });
+  document.addEventListener('mouseover', ev => {
+    const e = ev.target.closest && ev.target.closest('[data-edge]'), n = ev.target.closest && ev.target.closest('[data-node]'), t = ev.target.closest && ev.target.closest('[data-tip]');
+    if (e) showTip(edgeTip(+e.dataset.edge), ev); else if (n) showTip(nodeTip(n.dataset.node), ev); else if (t) showTip(t.dataset.tip, ev); else hideTip();
+  });
+  document.addEventListener('mousemove', ev => { if (tip.classList.contains('show')) moveTip(ev); });
+  $('#horizon').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-h]'); if (!b) return;
+    state.h = +b.dataset.h; renderControls(); renderAll();
+    const {edgeP} = currentRisk(); const hot = EDGES.filter(e => edgeP[e.i] >= .5);
+    log(`<span class="hl">HORIZON ${HORIZONS[state.h]}</span> ${hot.length} roads above 50% failure risk${hot.length ? ': ' + hot.map(e => e.name).join(', ') : ''}`);
+  });
+  $('#alerts').addEventListener('change', ev => {
+    const id = ev.target.dataset.hz; if (!id) return;
+    ev.target.checked ? state.active.add(id) : state.active.delete(id);
+    renderControls(); renderAll();
+    log(`<span class="dim">signal ${ev.target.checked ? 'enabled' : 'muted'}: ${HAZARDS.find(h => h.id === id).title}</span>`);
+  });
+  $('#run-mc').onclick = runMC;
+  $('#preview').onclick = applyForecast;
+  document.querySelectorAll('[data-scen]').forEach(b => b.onclick = () => applyScenario(b.dataset.scen));
+  document.querySelectorAll('[data-layer]').forEach(c => c.onchange = () => { state.layers[c.dataset.layer] = c.checked; renderMap(); });
+  $('#dest-list').addEventListener('click', ev => { const b = ev.target.closest('[data-dest]'); if (b) { state.selected = b.dataset.dest; renderAll(); } });
+  $('#mc').addEventListener('click', ev => {
+    const v = ev.target.closest('[data-view]'); if (v) { state.mcView = v.dataset.view; renderMC(); return; }
+    const r = ev.target.closest('[data-rec]');
+    if (r) { const rec = state.recs[+r.dataset.rec]; if (rec.done) return; rec.done = true; renderMC(); toast(`✓ Approved: ${rec.title}`); log(`<span class="ok">APPROVED</span> ${rec.title}. Tasks created for depot managers and drivers`); }
+  });
+}
+
+// ---------- hero animation ----------
+const heroEls = {};
+function heroFrame(now) {
+  if (!heroEls.truck) ['truck','rAB','rCB','cuts','br1','br2','haloA','haloB','haloA-t','haloB-t','cap1','cap2','cap3'].forEach(k => heroEls[k] = document.getElementById('h-' + k));
+  const t = (now % 9000) / 9000, E = heroEls;
+  const ramp = (a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+  const ab = [[60,150],[150,75],[330,75],[470,95]], cb = [[465,235],[400,150],[470,95]];
+  const along = (pts, f) => { const tr = {pts, seg:[], len:0}; for (let k = 1; k < pts.length; k++) { const l = Math.hypot(pts[k][0]-pts[k-1][0], pts[k][1]-pts[k-1][1]); tr.seg.push(l); tr.len += l; } return pointAlong(tr, f * tr.len); };
+  const p1 = t < .34, p2 = t >= .34 && t < .52, p3 = t >= .52;
+  E.rAB.setAttribute('opacity', p1 ? 1 : Math.max(0, 1 - ramp(.34, .42)) * .9);
+  E.rAB.setAttribute('stroke', p1 ? '#0ca30c' : '#d03b3b');
+  const cut = ramp(.34, .4) * (1 - ramp(.96, 1));
+  E.cuts.setAttribute('opacity', cut);
+  E.br1.setAttribute('stroke', cut > .5 ? '#d03b3b' : '#55627c'); E.br2.setAttribute('stroke', cut > .5 ? '#d03b3b' : '#55627c');
+  E.br1.setAttribute('stroke-dasharray', cut > .5 ? '3 6' : ''); E.br2.setAttribute('stroke-dasharray', cut > .5 ? '3 6' : '');
+  const halo = ramp(.42, .5) * (1 - ramp(.96, 1));
+  ['haloA', 'haloB'].forEach(k => E[k].setAttribute('opacity', halo * .14));
+  ['haloA-t', 'haloB-t'].forEach(k => E[k].setAttribute('opacity', halo));
+  E.rCB.setAttribute('opacity', ramp(.52, .58) * (1 - ramp(.96, 1)));
+  E.cap1.setAttribute('opacity', p1 ? 1 : 0); E.cap2.setAttribute('opacity', p2 ? 1 : 0); E.cap3.setAttribute('opacity', p3 ? 1 : 0);
+  let pos = null, col = '#0ca30c';
+  if (t < .3) pos = along(ab, t / .3);
+  else if (t >= .58 && t < .92) { pos = along(cb, (t - .58) / .34); col = '#ec835a'; }
+  if (pos) { E.truck.setAttribute('cx', pos[0]); E.truck.setAttribute('cy', pos[1]); E.truck.setAttribute('fill', col); E.truck.setAttribute('opacity', 1); }
+  else E.truck.setAttribute('opacity', 0);
+}
+
+// ---------- boot ----------
+function tickClock() { const d = new Date(); $('#clock').textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'}) + ' · ' + d.toTimeString().slice(0, 5) + ' local'; }
+drawTerrain(); renderControls(); bind();
+log(`<span class="hl">Lifeline Engine online</span> · ${NODES.length} nodes · ${EDGES.length} roads · ${SUPPLIERS.length} suppliers · ${DESTS.length} delivery sites`);
+log(`<span class="dim">ingesting signals: ${HAZARDS.map(h => h.short).join(' · ')}</span>`);
+replan(null);
+log(`<span class="ok">BASELINE</span> all ${DESTS.length} sites on primary supply · ${fmtN(DESTS.reduce((a, d) => a + d.demand, 0))} t/week to ${fmtN(DESTS.reduce((a, d) => a + d.people, 0))} people`);
+renderMC();
+tickClock(); setInterval(tickClock, 30000);
+requestAnimationFrame(animateTrucks);
+</script>
+</body>
+</html>
