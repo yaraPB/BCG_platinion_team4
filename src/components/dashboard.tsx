@@ -12,19 +12,16 @@ import {
 import {
   ArrowDownToLine,
   ArrowRight,
-  Presentation,
   ChartNoAxesCombined,
-  Check,
   ChevronDown,
   CircleAlert,
   History,
+  Info,
   LogOut,
   MapPinned,
   Navigation,
-  Package,
   PanelLeftClose,
   PanelLeftOpen,
-  PanelRightOpen,
   Plane,
   ReceiptText,
   RotateCcw,
@@ -33,7 +30,6 @@ import {
   Ship,
   Siren,
   Truck,
-  Warehouse,
   X,
 } from "lucide-react";
 import type { Network as SourceNetwork, Plan as SourcePlan } from "@/lib/types";
@@ -52,7 +48,7 @@ import { StatusBadge } from "./status-badge";
 import { TransportTimeline, type StripSize } from "./transport-timeline";
 import { ForecastControls, OutlookChart } from "./forecast-workspace";
 import type { MapView } from "./map/network-map";
-import { api, usd } from "@/lib/api";
+import { api } from "@/lib/api";
 import { ItineraryPanel } from "./itinerary-panel";
 import { ImpactPanel } from "./impact-panel";
 import { DemoGuide, type DemoStep } from "./demo-guide";
@@ -94,11 +90,6 @@ const subscribeUrl = (callback: () => void) => {
     window.removeEventListener("hashchange", callback);
     window.removeEventListener("popstate", callback);
   };
-};
-const subscribeNarrow = (callback: () => void) => {
-  const query = window.matchMedia("(max-width: 760px)");
-  query.addEventListener("change", callback);
-  return () => query.removeEventListener("change", callback);
 };
 const subscribeShort = (callback: () => void) => {
   const query = window.matchMedia("(max-height: 820px)");
@@ -157,14 +148,6 @@ export function Dashboard({
   const [forecastPending, setForecastPending] = useState(false);
   const [forecastKey, setForecastKey] = useState("");
   const [logOpen, setLogOpen] = useState(false);
-  // Open by default on wide screens; on phones the inspector would cover the map.
-  const narrow = useSyncExternalStore(
-    subscribeNarrow,
-    () => window.matchMedia("(max-width: 760px)").matches,
-    () => false,
-  );
-  const [inspectorChoice, setInspectorOpen] = useState<boolean | null>(null);
-  const inspectorOpen = inspectorChoice ?? !narrow;
   const [sideOpen, setSideOpen] = useState(true);
   // The transport strip starts collapsed on short screens (laptops, projectors) so the map keeps its height.
   const short = useSyncExternalStore(
@@ -194,7 +177,6 @@ export function Dashboard({
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     () => true,
   );
-  const selected = plan.deliveries.find((d) => d.communityId === selectedId)!;
   const input: ForecastInput = {
     closedRoads: plan.closedRoads,
     probabilities,
@@ -463,7 +445,7 @@ export function Dashboard({
     );
     const link = document.createElement("a");
     link.href = url;
-    link.download = "viamensa-dispatch-plan.csv";
+    link.download = "foodbridge-dispatch-plan.csv";
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -521,7 +503,7 @@ export function Dashboard({
       </div>
 
       <nav className="navigation-rail" aria-label="Views">
-        <a className="rail-logo" href="#main" aria-label="ViaMensa home">
+        <a className="rail-logo" href="#main" aria-label="FoodBridge home">
           <Route size={22} strokeWidth={2.2} />
         </a>
         {views.map((item) => (
@@ -536,7 +518,31 @@ export function Dashboard({
             <span>{item.label}</span>
           </button>
         ))}
-        <span className="rail-bottom">Team 4</span>
+        <div className="rail-account">
+          <button
+            className={`rail-icon ${demoOpen ? "active" : ""}`}
+            aria-pressed={demoOpen}
+            aria-label="Guided tour and shortcuts"
+            title="Guided tour and shortcuts (D)"
+            onClick={() => setDemoOpen(!demoOpen)}
+          >
+            <Info size={18} />
+          </button>
+          <span className="avatar" title={user ? `${user.name}, ${user.tenant}` : undefined} aria-hidden="true">
+            {(user?.name ?? "T4").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+          </span>
+          <button
+            className="rail-icon"
+            aria-label="Sign out"
+            title="Sign out"
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              window.location.assign("/");
+            }}
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </nav>
 
       <header className="app-header">
@@ -551,7 +557,7 @@ export function Dashboard({
           {sideOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
         </button>
         <div className="wordmark">
-          <strong>ViaMensa</strong>
+          <strong>FoodBridge</strong>
           <span>{current.title}, South Sudan</span>
         </div>
         <div className="scenario-control">
@@ -589,15 +595,6 @@ export function Dashboard({
             Reset
           </button>
         </div>
-        <button
-          className={`button demo-toggle ${demoOpen ? "active" : ""}`}
-          aria-pressed={demoOpen}
-          title="Demo guide (D)"
-          onClick={() => setDemoOpen(!demoOpen)}
-        >
-          <Presentation size={14} />
-          Demo
-        </button>
         <div className="readouts" aria-label="Network summary">
           <Readout
             label="People connected"
@@ -632,20 +629,6 @@ export function Dashboard({
         <button className="button export-button" onClick={exportPlan}>
           <ArrowDownToLine size={14} />
           Export CSV
-        </button>
-        <span className="avatar" title={user ? `${user.name}, ${user.tenant}` : undefined} aria-hidden="true">
-          {(user?.name ?? "T4").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-        </span>
-        <button
-          className="icon-button"
-          aria-label="Sign out"
-          title="Sign out"
-          onClick={async () => {
-            await fetch("/api/auth/logout", { method: "POST" });
-            window.location.assign("/");
-          }}
-        >
-          <LogOut size={14} />
         </button>
       </header>
 
@@ -692,10 +675,7 @@ export function Dashboard({
                         selected={selectedId === delivery.communityId}
                         supplier={name(delivery.supplierId)}
                         index={plan.deliveries.indexOf(delivery)}
-                        onSelect={() => {
-                          setSelectedId(delivery.communityId);
-                          setInspectorOpen(true);
-                        }}
+                        onSelect={() => setSelectedId(delivery.communityId)}
                       />
                     ))
                   ) : (
@@ -801,10 +781,7 @@ export function Dashboard({
           selectedId={selectedId}
           clock={clock}
           reducedMotion={reducedMotion}
-          onSelect={(id) => {
-            setSelectedId(id);
-            setInspectorOpen(true);
-          }}
+          onSelect={setSelectedId}
           onToggleRoad={toggleRoad}
           probabilities={probabilities}
           view={view}
@@ -852,22 +829,6 @@ export function Dashboard({
               {view === "savings" && <ImpactPanel network={sourceNetwork} closedRoads={plan.closedRoads} />}
             </div>
           )}
-          {view === "tower" &&
-            (inspectorOpen ? (
-              <JourneyInspector
-                delivery={selected}
-                network={network}
-                onClose={() => setInspectorOpen(false)}
-              />
-            ) : (
-              <button
-                className="inspector-reveal"
-                onClick={() => setInspectorOpen(true)}
-              >
-                <PanelRightOpen size={14} />
-                Journey details
-              </button>
-            ))}
         </NetworkMap>
 
         {!sheetViews.includes(view) && (
@@ -876,10 +837,7 @@ export function Dashboard({
               <TransportTimeline
                 plan={plan}
                 selectedId={selectedId}
-                onSelect={(id) => {
-                  setSelectedId(id);
-                  setInspectorOpen(true);
-                }}
+                onSelect={setSelectedId}
                 clock={clock}
                 onSeek={seek}
                 playing={playing && !reducedMotion}
@@ -994,91 +952,5 @@ function DeliveryRow({
         </span>
       </span>
     </button>
-  );
-}
-
-function JourneyInspector({
-  delivery,
-  network,
-  onClose,
-}: {
-  delivery: Delivery;
-  network: Network;
-  onClose: () => void;
-}) {
-  const name = (id: string | null) =>
-    network.nodes.find((n) => n.id === id)?.name ?? "Unassigned";
-  return (
-    <section className="journey-inspector" aria-label="Selected delivery details">
-      <div className="inspector-head">
-        <div>
-          <span>Journey</span>
-          <h2>{delivery.name}</h2>
-        </div>
-        <StatusBadge status={delivery.status} />
-        <button
-          className="icon-button"
-          aria-label="Hide journey details"
-          onClick={onClose}
-        >
-          <X size={14} />
-        </button>
-      </div>
-      <div className="journey-path">
-        {delivery.path.length ? (
-          delivery.path.filter((id) => !id.endsWith("-port")).map((id, i, path) => (
-            <span key={`${id}-${i}`}>
-              {i > 0 && <ArrowRight size={12} aria-hidden="true" />}
-              {i === 0 && <Warehouse size={13} aria-hidden="true" />}
-              <strong>{name(id)}</strong>
-              {i === path.length - 1 && <Package size={13} aria-hidden="true" />}
-            </span>
-          ))
-        ) : (
-          <span className="path-missing">
-            <CircleAlert size={13} />
-            No available supply route
-          </span>
-        )}
-      </div>
-      <dl className="journey-facts">
-        <div>
-          <dt>Food assigned</dt>
-          <dd>
-            {delivery.assignedTonnes}
-            <small> of {delivery.requestedTonnes} t</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Travel estimate</dt>
-          <dd>
-            {delivery.hours ?? "—"}
-            <small> hours</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Distance</dt>
-          <dd>
-            {delivery.distanceKm}
-            <small> km</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Cost per tonne</dt>
-          <dd>
-            {usd(delivery.costPerTonne)}
-            <small>
-              {delivery.plannedCostPerTonne !== null && delivery.plannedCostPerTonne !== delivery.costPerTonne
-                ? ` plan ${usd(delivery.plannedCostPerTonne)}`
-                : ` ${delivery.modes.join(" + ")}`}
-            </small>
-          </dd>
-        </div>
-      </dl>
-      <p className="decision-reason">
-        <Check size={14} aria-hidden="true" />
-        {delivery.reason}
-      </p>
-    </section>
   );
 }

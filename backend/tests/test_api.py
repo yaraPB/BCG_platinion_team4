@@ -9,13 +9,13 @@ def test_health(client):
 def test_auth_required_and_bad_login(client):
     assert client.get("/v1/network").status_code == 401
     assert client.get("/v1/network", headers={"Authorization": "Bearer nope"}).status_code == 401
-    r = client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "wrong"})
+    r = client.post("/v1/auth/token", json={"email": "demo@foodbridge.app", "password": "wrong"})
     assert r.status_code == 401
 
 
 def test_me_and_network(client, auth):
     me = client.get("/v1/me", headers=auth).json()
-    assert me["email"] == "demo@viamensa.app"
+    assert me["email"] == "demo@foodbridge.app"
     net = client.get("/v1/network", headers=auth).json()
     assert {n["kind"] for n in net["nodes"]} == {"hub", "community", "junction", "port"}
     road = next(c for c in net["corridors"] if c["id"] == "juba-bor")
@@ -124,13 +124,14 @@ def test_demo_password_follows_configuration(client):
         settings.demo_user_password = type(original)("rotated-pass-1")
         with get_sessionmaker()() as db:
             seed_demo(db)
-        assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "rotated-pass-1"}).status_code == 200
-        assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "winners"}).status_code == 401
+        login = {"email": "demo@foodbridge.app"}
+        assert client.post("/v1/auth/token", json={**login, "password": "rotated-pass-1"}).status_code == 200
+        assert client.post("/v1/auth/token", json={**login, "password": "winners"}).status_code == 401
     finally:
         settings.demo_user_password = original
         with get_sessionmaker()() as db:
             seed_demo(db)
-    assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "winners"}).status_code == 200
+    assert client.post("/v1/auth/token", json={"email": "demo@foodbridge.app", "password": "winners"}).status_code == 200
 
 
 def test_breaking_news_predicts_roads_and_suggests_new_supplier(client, auth):

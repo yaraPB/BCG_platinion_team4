@@ -1,8 +1,8 @@
-# ViaMensa
+# FoodBridge
 
 > *Via* (road) + *Mensa* (table): a road to every table.
 
-ViaMensa plans food deliveries from a client's suppliers to the communities it serves and keeps them moving when roads fail. When a corridor is cut (flood, conflict, accident, anything), it finds the cheapest next option: a detour from the same supplier, another supplier that can still reach the community (even when the network has split in two), the river, or air as a last resort. It reads news and field alerts, ranks the issues likely to disrupt the network, simulates them together, and prepares fallbacks before they are needed.
+FoodBridge plans food deliveries from a client's suppliers to the communities it serves and keeps them moving when roads fail. When a corridor is cut (flood, conflict, accident, anything), it finds the cheapest next option: a detour from the same supplier, another supplier that can still reach the community (even when the network has split in two), the river, or air as a last resort. It reads news and field alerts, ranks the issues likely to disrupt the network, simulates them together, and prepares fallbacks before they are needed.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ cd backend && uv sync && uv run uvicorn app.main:app --port 8000
 npm ci && VIAMENSA_API_URL=http://localhost:8000 npm run dev
 ```
 
-Sign in with `demo@viamensa.app` / `winners` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
+Sign in with `demo@foodbridge.app` / `winners` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
 Set `ANTHROPIC_API_KEY` for LLM alert analysis; without it the API uses the rule-based analyser.
 For a live demo, press `D` in the workspace (or open `/app?demo=1`) for the presenter guide; `N` (or Simulate alert on the map) plays a news alert and `R` resets.
 

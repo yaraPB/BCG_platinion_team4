@@ -1,10 +1,10 @@
-"""Savings tables: ViaMensa's fallback vs operating without a pre-computed fallback.
+"""Savings tables: FoodBridge's fallback vs operating without a pre-computed fallback.
 
 Comparisons (both stated in the API response so nobody has to guess what "savings" means):
 - vs emergency airlift: when the planned route is cut and no land alternative was prepared, food goes by air
-  (WFP South Sudan: ~$2,700/t). Saving = tonnes x (air cost - ViaMensa cost).
+  (WFP South Sudan: ~$2,700/t). Saving = tonnes x (air cost - FoodBridge cost).
 - vs waiting: the delivery waits for the road to reopen. People-days without the delivery avoided =
-  people x max(0, closure days - ViaMensa delivery days).
+  people x max(0, closure days - FoodBridge delivery days).
 - extra cost vs plan: what the fallback costs over the original plan (it is never free).
 
 All money uses the unit rates in assumptions.py; tonnes = caseload x ration x cycle days.
@@ -76,7 +76,7 @@ def impact_table(net: Network, results: list[ItineraryResult], *, closure_days: 
             "closureDaysAssumed": closure_days,
             "rationKgPerPersonDay": net.params.ration_kg_per_person_day,
             "cycleDays": net.params.cycle_days,
-            "statement": ("Savings compare ViaMensa's fallback with operating without a pre-computed fallback: an "
+            "statement": ("Savings compare FoodBridge's fallback with operating without a pre-computed fallback: an "
                           "emergency airlift at the WFP South Sudan air rate, or waiting for the road to reopen. "
                           "Unit rates and their sources: /v1/assumptions."),
         },

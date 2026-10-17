@@ -6,7 +6,7 @@ import { LogIn } from "lucide-react";
 
 export function LoginForm({ demo = null }: { demo?: { email: string; password: string } | null }) {
   const router = useRouter();
-  const [email, setEmail] = useState("demo@viamensa.app");
+  const [email, setEmail] = useState(demo?.email ?? "");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +27,18 @@ export function LoginForm({ demo = null }: { demo?: { email: string; password: s
     }
   }
 
-  return <form className="login-form" method="post" action="/api/auth/login" onSubmit={submit}>
+  return <>
+  <form className="login-form" method="post" action="/api/auth/login" onSubmit={submit}>
     <label>Email<input name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
     <label>Password<input name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
     {error && <p className="error-banner" role="alert">{error}</p>}
     <button className="button primary" type="submit" disabled={pending}><LogIn size={14} />{pending ? "Signing in…" : "Sign in"}</button>
-    {demo && <button className="button login-demo" type="button" disabled={pending} onClick={() => { setEmail(demo.email); setPassword(demo.password); }}>Use demo account</button>}
-  </form>;
+  </form>
+  {/* One click signs in with the public demo account: a plain form post, so it works before JavaScript loads. */}
+  {demo && <form className="login-demo-form" method="post" action="/api/auth/login">
+    <input type="hidden" name="email" value={demo.email} />
+    <input type="hidden" name="password" value={demo.password} />
+    <button className="button login-demo" type="submit" disabled={pending}><LogIn size={14} />Use demo account</button>
+  </form>}
+  </>;
 }

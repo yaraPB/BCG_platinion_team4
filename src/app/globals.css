@@ -1,4 +1,4 @@
-/* ViaMensa night-operations theme.
+/* FoodBridge night-operations theme.
    The map is the only loud element; panels are quiet instruments around it.
    Colour carries meaning only: route green, river blue, new-supplier amber,
    unreachable coral. Every status also has an icon and a label. */
@@ -332,17 +332,6 @@ select:focus-visible,
 .rail-item.active {
   background: var(--route-soft);
   color: var(--route-text);
-}
-.rail-bottom {
-  margin-top: auto;
-  font-family: var(--sans);
-  font-stretch: 84%;
-  font-size: 10.5px;
-  color: var(--ink-3);
-  white-space: nowrap;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  letter-spacing: 0.08em;
 }
 
 /* ---------- header ---------- */
@@ -1210,73 +1199,6 @@ select:focus-visible,
 }
 
 /* selected delivery card */
-.map-selected-card {
-  position: absolute;
-  right: 14px;
-  bottom: 40px;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: 34px 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px 10px 10px;
-  text-align: left;
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  border-radius: 6px;
-  color: var(--ink);
-  max-width: 320px;
-}
-.map-selected-card:hover:not(:disabled) {
-  border-color: var(--ink-3);
-}
-.selected-card-icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 4px;
-  background: var(--route-soft);
-  color: var(--route-text);
-}
-.map-selected-card.status-rerouted .selected-card-icon {
-  background: rgba(59, 133, 216, 0.18);
-  color: var(--river-text);
-}
-.map-selected-card.status-supplier-changed .selected-card-icon {
-  background: rgba(176, 140, 43, 0.2);
-  color: var(--amber-text);
-}
-.map-selected-card.status-unreachable .selected-card-icon {
-  background: var(--coral-soft);
-  color: var(--coral-text);
-}
-.map-selected-card > span:nth-child(2) {
-  display: grid;
-  min-width: 0;
-}
-.map-selected-card small {
-  font-family: var(--sans);
-  font-stretch: 84%;
-  font-size: 11px;
-  color: var(--ink-3);
-}
-.map-selected-card strong {
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.map-selected-card em {
-  font-style: normal;
-  font-family: var(--sans);
-  font-stretch: 84%;
-  font-size: 11.5px;
-  color: var(--ink-2);
-}
-.map-selected-card > svg {
-  color: var(--ink-3);
-}
 
 /* corridor popover */
 .corridor-popover {
@@ -1305,119 +1227,6 @@ select:focus-visible,
 }
 
 /* journey inspector */
-.journey-inspector {
-  position: absolute;
-  top: 14px;
-  right: 64px;
-  z-index: 6;
-  width: 300px;
-  max-height: calc(100% - 90px);
-  overflow-y: auto;
-  display: grid;
-  gap: 12px;
-  padding: 14px 16px 16px;
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  border-radius: var(--r-panel);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
-  scrollbar-width: thin;
-}
-.inspector-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.inspector-head > div {
-  flex: 1;
-  display: grid;
-  line-height: 1.15;
-}
-.inspector-head span {
-  font-family: var(--sans);
-  font-stretch: 84%;
-  font-size: 11px;
-  color: var(--ink-3);
-}
-.inspector-head h2 {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.journey-path {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  font-size: 12px;
-}
-.journey-path span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--ink-3);
-}
-.journey-path strong {
-  font-weight: 500;
-  color: var(--ink);
-}
-.path-missing {
-  color: var(--coral-text) !important;
-}
-.journey-facts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-.journey-facts dt {
-  font-family: var(--sans);
-  font-stretch: 84%;
-  font-size: 11px;
-  color: var(--ink-3);
-}
-.journey-facts dd {
-  font-size: 17px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  margin-top: 1px;
-}
-.journey-facts dd small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--ink-2);
-}
-.decision-reason {
-  display: flex;
-  gap: 8px;
-  padding: 10px 11px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--ink-2);
-  font-size: 12px;
-  line-height: 1.45;
-}
-.decision-reason svg {
-  flex: none;
-  color: var(--route-text);
-  margin-top: 2px;
-}
-.inspector-reveal {
-  position: absolute;
-  top: 14px;
-  right: 64px;
-  z-index: 6;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 12px;
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  border-radius: 6px;
-  color: var(--ink-2);
-}
-.inspector-reveal:hover {
-  color: var(--ink);
-}
 
 /* error banner */
 .error-banner {
@@ -2015,11 +1824,7 @@ td strong {
     gap: 7px;
     padding: 7px 12px;
   }
-  .rail-bottom {
-    margin: 0 0 0 auto;
-    writing-mode: horizontal-tb;
-    transform: none;
-  }
+  
   .ticker {
     order: 0;
   }
@@ -2064,25 +1869,9 @@ td strong {
   .delivery-list {
     overflow: visible;
   }
-  .journey-inspector {
-    right: 14px;
-    top: auto;
-    bottom: 14px;
-    max-height: 52%;
-    width: min(300px, calc(100% - 28px));
-  }
-  .inspector-reveal {
-    right: 14px;
-    top: auto;
-    bottom: 14px;
-  }
-  .map-selected-card {
-    right: auto;
-    left: 14px;
-    top: 14px;
-    bottom: auto;
-    max-width: calc(100% - 90px);
-  }
+  
+  
+  
   .map-legend {
     width: 200px;
   }
@@ -2091,8 +1880,7 @@ td strong {
   }
 }
 @media (max-width: 640px) {
-  .ticker p span,
-  .rail-bottom {
+  .ticker p span{
     display: none;
   }
   .scenario-control {
@@ -2111,9 +1899,7 @@ td strong {
   .map-legend {
     display: none;
   }
-  .journey-inspector {
-    max-height: 60%;
-  }
+  
   .bottom-strip {
     height: auto;
   }
@@ -2139,9 +1925,7 @@ td strong {
   letter-spacing: -0.03em;
 }
 .readout strong,
-.readout-list dd,
-.journey-facts dd,
-.inspector-head h2 {
+.readout-list dd{
   font-stretch: 92%;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -2337,10 +2121,6 @@ td strong {
 
 /* ==== Endangered roads, reroute animation, demo guide ==== */
 
-.demo-toggle.active { background: var(--route-soft); border-color: var(--route); color: var(--route-text); }
-
-
-
 .applied { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--route-text); }
 
 .risk-badge { font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 10px; background: rgba(44, 20, 18, 0.92); border: 1px solid rgba(255, 140, 124, 0.6); color: var(--coral-text); pointer-events: none; font-variant-numeric: tabular-nums; }
@@ -2374,7 +2154,6 @@ td strong {
 .new-tag { margin-left: 6px; font-size: 9px; padding: 2px 5px; border-radius: 3px; background: rgba(176, 140, 43, 0.2); color: var(--amber-text); text-transform: uppercase; letter-spacing: 0.5px; }
 /* Demo on a laptop or projector (short screens): the map takes the transport strip's height in the tower view. */
 
-
 /* ==== Collapsible side panel, transport strip sizes, alert drill ==== */
 .side-toggle { flex: none; margin-right: -4px; }
 .side-closed .workspace { grid-template-columns: minmax(0, 1fr); }
@@ -2407,3 +2186,19 @@ td strong {
   100% { opacity: 0; transform: translate(-50%, -4px); }
 }
 @media (prefers-reduced-motion: reduce) { .alert-toast { animation: none; } }
+.login-demo-form { display: grid; margin-top: 10px; }
+.login-demo-form .button { padding: 10px; justify-content: center; }
+
+/* ==== Account controls at the bottom of the rail, collapsible legend ==== */
+.rail-account { margin-top: auto; display: grid; justify-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); width: 100%; }
+.rail-icon { width: 40px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); cursor: pointer; }
+.rail-icon:hover { background: var(--bg2); color: var(--ink); }
+.rail-icon.active { background: var(--route-soft); color: var(--route-text); }
+@media (max-width: 1100px) {
+  .rail-account { margin: 0 0 0 auto; padding: 0 0 0 10px; border-top: 0; border-left: 1px solid var(--line); display: flex; align-items: center; width: auto; }
+}
+
+.legend-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -4px -4px 0 0; }
+.legend-head span { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.map-legend.collapsed { width: auto; padding: 6px 8px 6px 12px; }
+.map-legend.collapsed .legend-head { margin: 0; }

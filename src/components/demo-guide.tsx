@@ -23,7 +23,7 @@ export function DemoGuide({ steps, index, busy, onRun, onIndex, onReset, onClose
   return (
     <aside className="demo-guide" aria-label="Demo guide">
       <header>
-        <span className="demo-tag">Demo · step {index + 1} of {steps.length}</span>
+        <span className="demo-tag">Guided tour · step {index + 1} of {steps.length}</span>
         <div className="demo-dots" aria-hidden="true">
           {steps.map((s, i) => <i key={s.id} className={i < index ? "done" : i === index ? "current" : ""} />)}
         </div>

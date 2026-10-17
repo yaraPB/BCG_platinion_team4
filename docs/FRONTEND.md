@@ -2,7 +2,7 @@
 
 ## Scope
 
-The React presentation runs on the ViaMensa API (`backend/`). The public landing page is `/`, sign-in is `/login`, and the client workspace is `/app`. All data calls go through the same-origin proxy `/api/v1/*`, which attaches the session token from an httpOnly cookie: network and plan, itineraries, alerts and analysis, simulations and savings.
+The React presentation runs on the FoodBridge API (`backend/`). The public landing page is `/`, sign-in is `/login`, and the client workspace is `/app`. All data calls go through the same-origin proxy `/api/v1/*`, which attaches the session token from an httpOnly cookie: network and plan, itineraries, alerts and analysis, simulations and savings.
 
 ## Design direction
 
@@ -26,29 +26,28 @@ A night-operations control room, in the spirit of crisis and logistics dashboard
 The desktop layout is a fixed-viewport grid that does not scroll:
 
 1. **Event ticker** (top). The latest operations event with a clock, plus a history popover of the session's events.
-2. **Navigation rail** (left). Icon and label for the four views: Tower, Route A→B, Forecast and Savings. Views are deep-linkable with `/app#forecast` and similar.
+2. **Navigation rail** (left). Icon and label for the four views: Tower, Route A→B, Forecast and Savings. Views are deep-linkable with `/app#forecast` and similar. At the bottom: the info button (guided tour and shortcuts), the profile and sign out.
 3. **Header.** Side-panel toggle, wordmark, scenario selector with reset, live readouts (people connected, food allocated, deliveries on plan, deliveries needing attention), CSV export.
 4. **Side panel.** Opens and closes from the header on every view; when closed, the map takes the full width. It changes with the view: the dispatch list and suppliers (Tower); the current closures (Route A→B, Savings); or risk assumptions, outlook and corridor exposure (Forecast).
-5. **Map.** Always visible. Overlays: tools (fit, zoom, 3D terrain), the layer legend with toggles, the selected-delivery card, a corridor popover and, in the tower view, the journey inspector.
+5. **Map.** Always visible. Overlays: tools (fit, zoom, 3D terrain), the legend with layer toggles (collapsible; collapsed by default on screens under 820 px high), a corridor popover and, in the tower view, the Simulate alert button.
 6. **Bottom strip.** Transport progress in the tower view, with three sizes from its header (or by clicking its title): collapsed (playback controls only, the map gets the height), normal, and expanded (one readable row per delivery, labelled supplier → community). It starts collapsed on screens under 820 px high. The forecast view shows the delivery outlook chart.
 7. **Sheets.** Route A→B (itinerary planner) and Savings open as a scrollable sheet over the map; the map stays mounted underneath.
 
 Below 1100px the shell becomes a scrolling page: ticker, horizontal view bar, header with wrapped readouts, the map at 62% of the viewport height, then the side-column content and the bottom strip.
 
-## Alert drill and demo mode
+## Alert drill and guided tour
 
 **Simulate alert** (top left of the Tower map, or `N`) publishes a simulated news alert (`POST /v1/alerts/simulate`, labelled "Simulated newswire"). The analyst (Claude or rules) maps it to roads and predicts which will close. A small red alert names the roads it is closing, while the map frames them with a pulsing glow and their closure probability. After 2 seconds the alert fades, those roads close and every delivery is re-planned. Each press plays the next template: floods and barge attacks around Bor, checkpoints on Rumbek–Leer, then clashes around Nasir. Reset reopens everything and starts again from the first.
 
 **Re-plan animation.** When a plan changes, the map frames the changed deliveries (avoiding the demo guide) and dims the old route to a dashed ghost. A vehicle then draws each new route from its supplier, labelled with the decision: "Bor · new supplier Malakal", "rerouted by river" or "airlift from Juba" (a plane on an arc). Deliveries are staggered, then the overlay clears.
 
-**Demo mode** (`D`, the Demo button, or `/app?demo=1`) opens a presenter guide with five steps: the network, the alert, Bor's options, the forecast, and savings. Each step has a line to say and a button that performs it. Keys: `→` run the step and advance, `←` back, `N` simulate an alert, `R` reset (removes simulated alerts and reopens every corridor), `D` hide. The sign-in page offers **Use demo account** when the server sets `VIAMENSA_DEMO_PASSWORD`; set `showDemoLogin=false` in the Bicep parameters to remove it.
+**Guided tour** (`D`, the info button at the bottom of the rail, or `/app?demo=1`) opens a presenter guide with five steps: the network, the alert, Bor's options, the forecast, and savings. Each step has a line to say and a button that performs it. Keys: `→` run the step and advance, `←` back, `N` simulate an alert, `R` reset (removes simulated alerts and reopens every corridor), `D` hide. The sign-in page offers **Use demo account** when the server sets `VIAMENSA_DEMO_PASSWORD`: one click signs in (a plain form post, so it works before JavaScript loads); set `showDemoLogin=false` in the Bicep parameters to remove it.
 
 ## Map controls
 
 | Control | Result |
 | --- | --- |
-| Select a delivery, community or vehicle | Highlights its geographic route with a glow and updates the journey inspector. |
-| Selected-delivery card | Fits the map to that journey. |
+| Select a delivery, community or vehicle | Highlights its geographic route with a glow. |
 | Click a corridor or closure marker | Opens a popover with a closure/reopen action. |
 | Hover a corridor in the forecast exposure list | Highlights that corridor on the map. |
 | Fit | Restores the regional overview and flat view. |

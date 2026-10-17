@@ -1,5 +1,5 @@
 /**
- * Server-only access to the ViaMensa API. The browser never sees the bearer token: it lives in an httpOnly cookie and
+ * Server-only access to the FoodBridge API. The browser never sees the bearer token: it lives in an httpOnly cookie and
  * is attached here, in Next.js route handlers and server components.
  */
 export const SESSION_COOKIE = "vm_session";

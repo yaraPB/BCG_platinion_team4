@@ -1,4 +1,4 @@
-// ViaMensa on Azure: Container Apps (api + web), PostgreSQL Flexible Server, Key Vault, ACR, Log Analytics, App Insights.
+// FoodBridge on Azure: Container Apps (api + web), PostgreSQL Flexible Server, Key Vault, ACR, Log Analytics, App Insights.
 // Two-phase deploy (see deploy.sh): deployApps=false creates the platform; images are built in ACR; deployApps=true
 // creates/updates the container apps.
 

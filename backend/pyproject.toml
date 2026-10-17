@@ -1,7 +1,7 @@
 [project]
 name = "viamensa-api"
 version = "0.1.0"
-description = "ViaMensa routing and disruption-planning API"
+description = "FoodBridge routing and disruption-planning API"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "alembic>=1.13",

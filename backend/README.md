@@ -1,4 +1,4 @@
-# ViaMensa API
+# FoodBridge API
 
 FastAPI service: routing engine, correlated Monte Carlo, LLM alert analysis, savings, auth. See `../docs/ARCHITECTURE.md` and `../docs/API.md`.
 

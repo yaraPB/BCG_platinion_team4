@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="ViaMensa API",
+        title="FoodBridge API",
         version="0.1.0",
         description=("Routing and disruption planning for food deliveries: reroute, switch supplier or airlift when "
                      "corridors are cut; correlated Monte Carlo of news-informed risks; savings vs. no fallback."),

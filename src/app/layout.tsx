@@ -14,7 +14,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "ViaMensa | Food corridor control tower",
+  title: "FoodBridge | Food corridor control tower",
   description:
     "Plan food deliveries, explore corridor disruptions, and keep communities connected to supply.",
 };

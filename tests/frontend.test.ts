@@ -4,7 +4,7 @@ import type { Network as SourceNetwork, Plan as SourcePlan } from "../src/lib/ty
 import { displayNetwork, displayPlan } from "../src/components/model/display-network";
 import { pointAlong, vehiclePosition } from "../src/components/map/geometry";
 import { simulateOutlook } from "../src/components/model/simulation";
-// Recorded responses of the ViaMensa API (GET /v1/network, POST /v1/plan). Regenerate with backend/scripts if the
+// Recorded responses of the FoodBridge API (GET /v1/network, POST /v1/plan). Regenerate with backend/scripts if the
 // network changes.
 import networkFixture from "./fixtures/api-network.json";
 import plansFixture from "./fixtures/api-plans.json";

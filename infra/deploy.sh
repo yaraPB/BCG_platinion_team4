@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy ViaMensa to Azure. Requires: az CLI logged in (az login), permission to create resources and role assignments.
+# Deploy FoodBridge to Azure. Requires: az CLI logged in (az login), permission to create resources and role assignments.
 #
 #   RESOURCE_GROUP=viamensa-rg LOCATION=westeurope ./infra/deploy.sh
 #
@@ -90,5 +90,5 @@ cat <<MSG
 Deployed.
   Web:  $WEB
   API:  $API   (OpenAPI docs: $API/docs)
-  Demo sign-in: demo@viamensa.app / (Key Vault secret 'demo-user-password')
+  Demo sign-in: demo@foodbridge.app / (Key Vault secret 'demo-user-password')
 MSG

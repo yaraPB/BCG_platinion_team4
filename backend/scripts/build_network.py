@@ -27,7 +27,7 @@ import httpx
 ROOT = Path(__file__).resolve().parent
 CACHE = ROOT / ".cache"
 OUT = ROOT.parent / "app" / "seed" / "networks" / "south_sudan.json"
-UA = {"User-Agent": "ViaMensa-hackathon/0.1 (BCG Platinion team 4)"}
+UA = {"User-Agent": "FoodBridge-hackathon/0.1 (BCG Platinion team 4)"}
 MAX_DETOUR = 2.2
 SIMPLIFY_DEG = 0.004  # ~400 m
 

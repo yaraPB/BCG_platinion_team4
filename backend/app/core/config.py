@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     demo_tenant_slug: str = "demo-food-distributor"
     demo_tenant_name: str = "Demo client: food distributor (South Sudan)"
-    demo_user_email: str = "demo@viamensa.app"
+    demo_user_email: str = "demo@foodbridge.app"
     demo_user_password: SecretStr = SecretStr("winners")
 
     anthropic_api_key: SecretStr | None = Field(

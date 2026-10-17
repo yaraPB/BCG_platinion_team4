@@ -14,15 +14,13 @@ import type {
   Marker,
 } from "maplibre-gl";
 import {
-  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
   Crosshair,
   Layers,
   Minus,
   Mountain,
   Plus,
-  Ship,
-  TriangleAlert,
-  Truck,
   Waves,
   X,
 } from "lucide-react";
@@ -139,6 +137,8 @@ export default function NetworkMap({
     [routes, setRoutes] = useState(true),
     [terrain, setTerrain] = useState(false);
   const [roadId, setRoadId] = useState<string | null>(null);
+  // Open by default, collapsed on short screens (this component only renders in the browser).
+  const [legendOpen, setLegendOpen] = useState(() => window.innerHeight > 820);
   const selected = plan.deliveries.find((d) => d.communityId === selectedId)!;
   const activeRoad = network.corridors.find((r) => r.id === roadId);
   const callbacks = useRef({ onSelect });
@@ -151,12 +151,11 @@ export default function NetworkMap({
   const selectedRef = useRef(selectedId);
   const risksVisible = risks || view === "forecast";
   const riskLayer = view === "forecast" && !!roadRisk;
-  // Leave room for the overlays: the journey inspector on wide screens sits on
-  // the right; on narrow screens the overlays stack at the edges instead.
-  const framePadding = (forView: MapView = view) => {
+  // Leave room for the overlays: map tools on the right, the alert button and legend on the left.
+  const framePadding = () => {
     const width = container.current?.clientWidth ?? 1200;
     if (width < 760) return { top: 90, bottom: 120, left: 24, right: 24 };
-    return { top: 70, bottom: 90, left: 50, right: forView === "tower" ? 360 : 110 };
+    return { top: 70, bottom: 90, left: 50, right: 80 };
   };
 
   useEffect(() => {
@@ -592,8 +591,6 @@ export default function NetworkMap({
       cancelAnimationFrame(frame);
       badges.forEach((b) => b.remove());
     };
-    // Framing reads the current layout; re-run only when the endangered roads change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, network, endangered, reducedMotion]);
 
   // Route-change transition: when the plan changes, every delivery whose route changed shows its old route fading
@@ -639,8 +636,6 @@ export default function NetworkMap({
     const lngs = all.map((p) => p[0]),
       lats = all.map((p) => p[1]);
     const pad = framePadding();
-    const card = container.current?.parentElement?.querySelector(".incident-card") as HTMLElement | null;
-    if (card) pad.left = Math.max(pad.left, card.offsetWidth + 40);
     // Keep the animation clear of the presenter's demo guide where it overlaps the bottom of the map.
     const guide = document.querySelector(".demo-guide");
     const box = container.current?.getBoundingClientRect();
@@ -799,7 +794,7 @@ export default function NetworkMap({
         const el = document.createElement("button");
         el.type = "button";
         el.className = "map-vehicle";
-        el.innerHTML = `<span class="vehicle-body">${truckIcon}</span><span class="vehicle-label">VM-${String(index + 1).padStart(3, "0")}</span>`;
+        el.innerHTML = `<span class="vehicle-body">${truckIcon}</span><span class="vehicle-label">FB-${String(index + 1).padStart(3, "0")}</span>`;
         el.setAttribute("aria-label", `Track transport to ${delivery.name}`);
         el.onclick = (event) => {
           event.stopPropagation();
@@ -954,25 +949,6 @@ export default function NetworkMap({
     });
     setTerrain(!terrain);
   }
-  function focusDelivery() {
-    const coords = selected.coordinates.length
-      ? selected.coordinates
-      : [network.nodes.find((n) => n.id === selectedId)!.coordinates];
-    const lngs = coords.map((p) => p[0]),
-      lats = coords.map((p) => p[1]);
-    mapRef.current?.fitBounds(
-      [
-        [Math.min(...lngs), Math.min(...lats)],
-        [Math.max(...lngs), Math.max(...lats)],
-      ],
-      {
-        padding: framePadding(),
-        maxZoom: 8.5,
-        duration: reducedMotion ? 0 : 800,
-      },
-    );
-  }
-
   return (
     <section className="map-stage" aria-label="South Sudan delivery map">
       {failed ? (
@@ -1031,7 +1007,20 @@ export default function NetworkMap({
         </button>
       </div>
 
-      <div className="map-legend" aria-label="Map layers and legend">
+      <div className={`map-legend ${legendOpen ? "" : "collapsed"}`} aria-label="Map layers and legend">
+        <div className="legend-head">
+          <span>Legend</span>
+          <button
+            className="icon-button"
+            aria-expanded={legendOpen}
+            aria-label={legendOpen ? "Collapse the legend" : "Expand the legend"}
+            title={legendOpen ? "Collapse" : "Expand"}
+            onClick={() => setLegendOpen(!legendOpen)}
+          >
+            {legendOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          </button>
+        </div>
+        {legendOpen && <>
         <div className="legend-toggles">
           <button
             aria-pressed={routes}
@@ -1114,38 +1103,8 @@ export default function NetworkMap({
             </small>
           </div>
         )}
+        </>}
       </div>
-
-      <button
-        className={`map-selected-card status-${selected.status}`}
-        onClick={focusDelivery}
-        disabled={!ready || failed}
-      >
-        <span className="selected-card-icon">
-          {selected.status === "unreachable" ? (
-            <TriangleAlert size={18} />
-          ) : selected.legs.some((l) => l.mode === "river") ? (
-            <Ship size={18} />
-          ) : (
-            <Truck size={18} />
-          )}
-        </span>
-        <span>
-          <small>Selected delivery</small>
-          <strong>
-            {selected.path.length
-              ? `${network.nodes.find((n) => n.id === selected.supplierId)?.name} to `
-              : ""}
-            {selected.name}
-          </strong>
-          <em>
-            {selected.hours === null
-              ? "No open supply route"
-              : `${selected.assignedTonnes} t food, ${selected.distanceKm} km, ${selected.hours} h`}
-          </em>
-        </span>
-        <ArrowUpRight size={16} />
-      </button>
 
       {activeRoad && (
         <div className="corridor-popover" role="dialog" aria-label="Corridor details">
