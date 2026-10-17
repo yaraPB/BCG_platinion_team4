@@ -1,0 +1,12 @@
+node_modules
+.next
+backend
+infra
+mock
+assets
+reroute-demo
+index_lina.html
+.git
+.github
+*.log
+.env*

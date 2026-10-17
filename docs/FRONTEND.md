@@ -2,7 +2,7 @@
 
 ## Scope
 
-This redesign changes the React presentation, map styling and browser interactions. Existing route handlers, server planning rules and shared API types are unchanged. The application still consumes its existing `POST /api/plan` response when a corridor is closed or reopened.
+The React presentation runs on the ViaMensa API (`backend/`). The public landing page is `/`, sign-in is `/login`, and the client workspace is `/app`. All data calls go through the same-origin proxy `/api/v1/*`, which attaches the session token from an httpOnly cookie: network and plan, itineraries, alerts and analysis, simulations and savings.
 
 ## Design direction
 
@@ -26,11 +26,12 @@ A night-operations control room, in the spirit of crisis and logistics dashboard
 The desktop layout is a fixed-viewport grid that does not scroll:
 
 1. **Event ticker** (top). The latest operations event with a clock, plus a history popover of the session's events.
-2. **Navigation rail** (left). Icon and label for the four views: Tower, Forecast, Playbook, Corridors. Views are deep-linkable with `/#forecast` and similar.
+2. **Navigation rail** (left). Icon and label for the seven views: Tower, Route A→B, Alerts, Forecast, Playbook, Savings and Corridors. Views are deep-linkable with `/app#forecast` and similar.
 3. **Header.** Wordmark, scenario selector with reset, live readouts (people connected, food allocated, deliveries on plan, deliveries needing attention), CSV export.
-4. **Side column.** Changes with the view: the dispatch list and supply reserves; risk assumptions, outlook and corridor exposure; reserves to hold per hub; or the corridor access list.
+4. **Side column.** Changes with the view: the dispatch list and suppliers; the current closures (Route A→B, Alerts, Savings); risk assumptions, outlook and corridor exposure; reserves to hold per supplier; or the corridor access list.
 5. **Map.** Always visible. Overlays: tools (fit, zoom, 3D terrain), the layer legend with toggles, the selected-delivery card, a corridor popover and, in the tower view, the journey inspector.
 6. **Bottom strip.** Transport playback in the tower view, the delivery outlook chart in the forecast view and the fallback table in the playbook view. Hidden in the corridors view.
+7. **Sheets.** Route A→B (itinerary planner), Alerts (news analysis → simulation → playbook) and Savings open as a scrollable sheet over the map; the map stays mounted underneath.
 
 Below 1100px the shell becomes a scrolling page: ticker, horizontal view bar, header with wrapped readouts, the map at 62% of the viewport height, then the side-column content and the bottom strip.
 
@@ -53,13 +54,14 @@ Trucks and barges follow the cached path in each delivery leg. Animation is time
 ## Component boundaries
 
 - `dashboard.tsx`: active view, scenario, selection, API request lifecycle, export, event log, deep links, and the three view-dependent regions (side column, map overlays, bottom strip).
-- `model/display-network.ts`: enriches API results with frontend geometry, transport modes and illustrative hazards. It preserves the API's supplier and path decisions.
+- `model/display-network.ts`: maps API corridors (OpenStreetMap geometry, mode, distance) to the display model, computes each corridor's exposure to the scenario hazard areas from its geometry, and hides port transfers. It preserves the API's supplier and path decisions.
 - `map/basemap.ts`: derives the night basemap from the cached Positron style, repainting every layer and adding the Natural Earth relief raster as a dark hillshade.
 - `map/network-map.tsx`: MapLibre lifecycle, vector layers (glowing selected route, baseline path, hatched hazards, risk-coloured corridors, hover highlight), geographic markers and shared-clock transport animation. Accepts the active view, forecast road risks, a highlighted corridor and overlay children.
 - `map/geometry.ts`: distance-weighted path interpolation, bearings, hazard circles, the hatch tile generator and vehicle icons.
 - `map/schematic-map.tsx`: geographic SVG fallback if MapLibre initialization fails.
 - `transport-timeline.tsx`: playback controls, time scrubber and per-delivery leg tracks.
-- `model/simulation.ts`: deterministic, browser-only hypothetical scenario sampler. Work is chunked to keep inputs responsive and supports cancellation.
+- `model/simulation.ts`: sends the forecast assumptions to `POST /v1/simulations` (correlated server model) and maps the response to the forecast and playbook views.
+- `itinerary-panel.tsx`, `risk-panel.tsx`, `impact-panel.tsx`: the Route A→B, Alerts and Savings sheets.
 - `forecast-workspace.tsx`: `ForecastControls` (assumptions, outlook, corridor exposure), `OutlookChart` (stacked outcome bars), `PlaybookReserves` and `PlaybookTable`.
 - `lib/presentation.ts`: the shared palette, status metadata and number formatting used by both CSS-free map code and React components.
 
@@ -68,22 +70,20 @@ Trucks and barges follow the cached path in each delivery leg. Animation is time
 | Asset | Source and use |
 | --- | --- |
 | `src/lib/data/map-style.json` | Complete [OpenFreeMap Positron](https://openfreemap.org/quick_start/) vector style, cached locally and repainted at runtime; tiles, glyphs and sprites load over the network. |
-| `src/lib/data/corridor-geometry.json` | Road shapes from [OSRM / FOSSGIS](https://routing.openstreetmap.de/about.html), based on OpenStreetMap. White Nile and tributary waterway shapes from OpenStreetMap via Overpass. Retrieved 17 October 2026; each corridor records its source. |
+| Corridor geometry | Served by the API (`GET /v1/network`). Built by `backend/scripts/build_network.py`: road shapes from OSRM on OpenStreetMap, White Nile, Sobat and Bahr el Zeraf river lines from OpenStreetMap via Overpass. |
 | `src/lib/data/south-sudan.json` | South Sudan boundary from [Natural Earth](https://www.naturalearthdata.com/), drawn as a soft glowing outline. |
 | Natural Earth shaded relief | Raster tiles referenced by the cached style, filtered dark for the hillshade texture. |
 | Optional elevation | Public Mapzen Terrarium tiles on the AWS elevation dataset. |
 
 The map displays attribution. OpenStreetMap data is available under the ODbL; preserve the data attribution when reusing cached geometry. Contributions and corrections can be made through [OpenStreetMap](https://www.openstreetmap.org/). Routing shapes were fetched during development, so the dashboard does not repeatedly call public routing services.
 
-River paths include illustrative terminal connections. Transport modes, timings and suitability are demonstration assumptions, not a verified logistics network.
+Unit costs are published rates and speeds are labelled estimates (`GET /v1/assumptions`); warehouses and caseloads are demo client inputs.
 
 ## Forecast interpretation
 
-For each corridor, the browser combines hazard probability and synthetic exposure. The 72-hour survival probability is the product of each hazard's survival contribution; shorter horizons scale that survival probability by the horizon ratio. Explicitly closed corridors remain closed.
+The sliders are the planner's 72-hour probabilities for three scenario areas; shorter horizons scale survival by the horizon ratio. The server runs the correlated disruption model: areas can co-occur, corridors inside an area fail together, and consequences depend on the hazard and the road surface. Every future is re-planned (reroute, supplier switch or airlift), and identical futures are solved once. Explicitly closed corridors stay closed. For issues extracted from news and field reports, use **Alerts**.
 
-The simulation samples 2,000 independent corridor-failure sets and explores reachability, fallback supply and available stock. It follows the existing plan's priority order and keeps a planned supplier when reachable with sufficient stock. It is a presentation preview, separate from the authoritative dispatch response. Equal-cost route ties may differ from the server's Dijkstra implementation.
-
-The playbook reports observed contingencies, a frequently co-occurring baseline closure and the 90th percentile of extra fallback demand per hub. Those figures are illustrative; they do not place orders or persist plans.
+The playbook reports the most frequent contingency per community, the corridor that most often triggered it, and the 90th percentile of fallback demand per supplier. These are planning figures; they do not place orders.
 
 ## Verification
 

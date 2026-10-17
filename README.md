@@ -1,130 +1,71 @@
 # ViaMensa
 
-> ViaMensa	Latin	Via (road) + Mensa (table). A road to every table
+> *Via* (road) + *Mensa* (table): a road to every table.
 
-A fullstack food logistics application built with **Next.js, React and TypeScript**. ViaMensa connects a geographic view of South Sudan with server-side route planning, stock allocation and disruption scenarios.
+ViaMensa plans food deliveries from a client's suppliers to the communities it serves and keeps them moving when roads fail. When a corridor is cut (flood, conflict, accident, anything), it finds the cheapest next option: a detour from the same supplier, another supplier that can still reach the community (even when the network has split in two), the river, or air as a last resort. It reads news and field alerts, ranks the issues likely to disrupt the network, simulates them together, and prepares fallbacks before they are needed.
 
-The interface is a night-operations control room: the map is the hero, and quiet glass panels sit around it. MapLibre renders South Sudan on a dark hillshaded basemap derived from the cached OpenFreeMap style, with geographic road and river paths, hatched hazard footprints and animated trucks and barges. Colour carries meaning only (route green, river blue, new-supplier amber, unreachable coral) and every status also has an icon and a label. The frontend redesign preserves the existing planning API and server logic.
+## Architecture
 
-## Quick start
+| Layer | Implementation | Folder |
+| --- | --- | --- |
+| Web | Next.js (App Router), React, MapLibre on OpenFreeMap tiles. Landing page, sign-in, client workspace. Server-side proxy keeps the token in an httpOnly cookie. | `src/` |
+| API | FastAPI (Python 3.13): routing engine, correlated Monte Carlo, LLM alert analysis, savings tables, JWT auth, per-client data. | `backend/` |
+| Data | PostgreSQL (Azure Flexible Server in production, SQLite for local dev/tests); Alembic migrations. | `backend/migrations` |
+| Network | Real South Sudan towns, OpenStreetMap road geometry (OSRM) and Nile/Sobat river legs (Overpass), built by a script and committed. | `backend/scripts/build_network.py` |
+| Infra | Docker images, Azure Container Apps + PostgreSQL + Key Vault + ACR + Log Analytics/App Insights (Bicep), GitHub Actions CI/CD. | `infra/`, `.github/` |
 
-**Requirements:** Node.js 20.9+ and npm. Node.js 22 or 24 LTS is recommended.
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · API: [docs/API.md](docs/API.md) (live OpenAPI at `/docs` on the API) · Frontend design: [docs/FRONTEND.md](docs/FRONTEND.md).
+
+## Frontend
+
+The workspace (`/app`) is a night-operations control room: the map is the hero and quiet glass panels sit around it. MapLibre renders South Sudan on a dark hillshaded basemap derived from the cached OpenFreeMap style, with the API's OpenStreetMap road and river paths, hatched hazard footprints and animated trucks and barges. Colour carries meaning only (route green, river blue, new-supplier amber, unreachable coral), and every status also has an icon and a label.
+
+Views are deep-linkable: `/app#itinerary`, `/app#alerts`, `/app#forecast`, `/app#playbook`, `/app#savings`, `/app#corridors` (or `/app?view=forecast` for links that must survive redirects).
+
+**Hydration warning in development?** If the console diff shows attributes such as `bis_skin_checked`, `bis_register` or `__processed_…`, a browser extension (Bitdefender's web protection injects these) is rewriting the page before React hydrates. Open the app in an incognito window or exclude `localhost` in the extension. For the smoothest experience, test a production build (`npm run build && npm start`).
+
+## Run locally
+
+**Option A: Docker** (full stack with Postgres)
 
 ```bash
-npm ci
-npm run dev
+docker compose up --build        # web http://localhost:3000, API http://localhost:8000/docs
 ```
 
-Open [localhost:3000](http://localhost:3000). No environment variables, API keys, Python installation or launcher scripts are required.
-
-Views are deep-linkable: `/#forecast`, `/#playbook`, `/#corridors`, or `/?view=forecast` for links that must survive redirects.
-
-**Hydration warning in development?** If the console diff shows attributes such as `bis_skin_checked`, `bis_register` or `__processed_…`, a browser extension (Bitdefender's web protection injects these) is rewriting the page before React hydrates. The app itself hydrates cleanly; open it in an incognito or guest window, or exclude `localhost` in the extension, and the warning disappears.
-
-For the smoothest experience test with a production build (`npm run build && npm start`); development mode runs React in strict mode with double effects and unminified bundles.
-
-For a production build:
+**Option B: without Docker**
 
 ```bash
-npm run build
-npm start
+# API (Python via uv: https://docs.astral.sh/uv/)
+cd backend && uv sync && uv run uvicorn app.main:app --port 8000
+# Web (Node 20.9+)
+npm ci && VIAMENSA_API_URL=http://localhost:8000 npm run dev
 ```
 
-Use `npm run dev -- --port 3001` to change the port.
+Sign in with `demo@viamensa.app` / `winners` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
+Set `ANTHROPIC_API_KEY` for LLM alert analysis; without it the API uses the rule-based analyser.
 
-## Features
+## Deploy to Azure
 
-| Area | Behavior |
-| --- | --- |
-| Control tower | Three hubs, seven communities and fifteen geographic corridors on a night basemap derived from the cached OpenFreeMap style. |
-| Transport animation | Trucks and barges follow cached road and river geometry, synchronized with a scrubber, pause, restart and playback speed controls. |
-| Scenario planning | Presets and individual closures trigger server-side recalculation of routes, suppliers and stock. |
-| Dispatch board | Search communities, filter deliveries needing attention and select a destination. |
-| Delivery details | Supplier, route, allocation, travel estimate, remaining food and decision explanation. |
-| Risk forecast | Browser-only simulation of 2,000 hypothetical scenarios with adjustable probabilities and a 24/48/72-hour horizon. |
-| Fallback playbook | Community contingencies and indicative reserve requirements derived from the simulation. |
-| Map layers | Road/river routes, illustrative risk areas, optional terrain, selected-route focus and corridor inspection. |
-| Export | Download the current dispatch plan as CSV. |
-| Map fallback | Interactive SVG using the same geographic paths when MapLibre cannot load; keyboard-accessible corridor controls. |
-
-## Stack and structure
-
-| Layer | Implementation |
-| --- | --- |
-| Frontend | React components, TypeScript and responsive CSS |
-| Framework | Next.js App Router |
-| Backend | Next.js Route Handlers and a server-side TypeScript planning service |
-| Map | MapLibre GL JS with a night basemap derived from the cached OpenFreeMap vector style and OpenStreetMap attribution |
-| Data | Typed synthetic fixtures; stateless scenario calculations |
-| Verification | ESLint, TypeScript and the Node test runner through `tsx` |
-
-```text
-src/
-  app/
-    api/network/route.ts      Network endpoint
-    api/plan/route.ts         Baseline and recalculation endpoints
-    globals.css              Night theme, control-room grid and responsive layout
-    layout.tsx               Root layout and metadata
-    page.tsx                 Server-rendered initial plan
-  components/
-    dashboard.tsx            Scenario state and API requests
-    transport-timeline.tsx   Shared playback clock and journey timelines
-    forecast-workspace.tsx   Risk inputs, outcome charts and playbook
-    model/                   Frontend geometry adapter and browser simulation
-    map/                     MapLibre, SVG fallback and transport geometry
-  lib/
-    data/network.ts          Demonstration dataset
-    server/planning.ts       Routing, priority and stock allocation
-    types.ts                 Shared domain and API types
-tests/                       Planner and API tests
-docs/                        Architecture, API and product reference
+```bash
+az login
+RESOURCE_GROUP=viamensa-rg LOCATION=westeurope ANTHROPIC_API_KEY=... ./infra/deploy.sh
 ```
 
-The supplied `index_lina.html`, `reroute-demo/` and `assets/` are design references. They are not application entry points or served by Next.js. The active application is entirely in `src/`.
+The script provisions the platform, builds both images in Azure Container Registry (no local Docker needed), deploys the container apps and prints the URLs. Secrets are generated once and kept in Key Vault. CI/CD: `.github/workflows/deploy.yml` (OIDC).
 
-## Commands
+## Checks
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Development server with hot reload |
-| `npm run build` | Production build |
-| `npm start` | Serve the production build |
-| `npm run lint` | Code conventions and React rules |
-| `npm run typecheck` | TypeScript checks |
-| `npm test` | Routing, stock, priority and API validation tests |
-| `npm run check` | Lint, type checking and tests |
+| `cd backend && uv run pytest` | Engine, risk model, analyser and API tests (routing verified against NetworkX) |
+| `cd backend && uv run ruff check app tests scripts` | Python lint |
+| `npm run check` | Web lint, type check, tests |
+| `npm run build` | Production web build |
 
-Commit `package-lock.json` and use `npm ci` for reproducible installs. Generated files, dependencies and local caches are excluded through `.gitignore`.
+## Data and numbers
 
-## API overview
+- Towns, roads and rivers are real (OpenStreetMap). Warehouses, caseloads and priorities are the demo client's inputs.
+- Every unit cost has a published source (World Bank, AfDB, UNOPS, Logistics Cluster, WFP); planning estimates (truck/barge speeds, hazard consequence parameters, likelihood→probability bands) are labelled as estimates. All of it is served by `GET /v1/assumptions` and shown in the app.
+- Sample alerts in the seed are illustrative and labelled as such; real reports can be pasted into the workspace.
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| GET | `/api/network` | Nodes, corridors and scenario presets |
-| GET | `/api/plan` | Baseline dispatch plan |
-| POST | `/api/plan` | Recalculate for closed corridor IDs |
-
-Example request body:
-
-```json
-{ "closedRoads": ["juba-bor"] }
-```
-
-## Data boundaries
-
-This is a planning demonstration. Town coordinates are approximate. Corridor availability, travel times, exposure assumptions, populations, food insecurity phases, stocks and food quantities are synthetic. Road geometry is cached from OpenStreetMap routing; the two river corridors follow cached OpenStreetMap waterway geometry. Geometry and displayed transport modes do not certify road access, navigability or travel time. Moving vehicles illustrate the plan and are not telemetry.
-
-The risk forecast runs entirely in the browser. It samples independent corridor closures using adjustable, synthetic hazard exposure. It does not ingest weather or conflict reports and adds no server endpoint.
-
-The application does not currently include authentication, a database, live conflict/weather feeds or durable saved plans. Every request calculates a fresh scenario without changing another user's view. The farmer and NGO reference mock has separate data and is not connected to this API.
-
-MapLibre is bundled with the application. OpenFreeMap tiles, optional terrain tiles and Google Fonts need internet access; cached route geometry and the browser simulation need no external routing service or API key. System fonts provide a fallback. See [Frontend design and mapping](docs/FRONTEND.md) for sources, controls and component structure.
-
-## Documentation
-
-- [Architecture and planning rules](docs/ARCHITECTURE.md)
-- [Frontend design and mapping](docs/FRONTEND.md)
-- [API contract and examples](docs/API.md)
-- [Original farmer and NGO product plan](docs/PLAN.md) — historical reference
-
-Implementation references: [Next.js](https://nextjs.org/docs/app), [Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route) and [MapLibre](https://maplibre.org/maplibre-gl-js/docs/).
+`index_lina.html`, `reroute-demo/`, `mock/` and `docs/PLAN.md` are earlier design references and are not part of the application.

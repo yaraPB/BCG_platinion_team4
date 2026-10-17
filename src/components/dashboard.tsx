@@ -12,15 +12,20 @@ import {
 import {
   ArrowDownToLine,
   ArrowRight,
+  BrainCircuit,
   ChartNoAxesCombined,
   Check,
   ChevronDown,
   CircleAlert,
   ClipboardList,
   History,
+  LogOut,
   MapPinned,
+  Navigation,
   Package,
   PanelRightOpen,
+  Plane,
+  ReceiptText,
   RotateCcw,
   Route,
   Search,
@@ -50,6 +55,10 @@ import {
   PlaybookTable,
 } from "./forecast-workspace";
 import type { MapView } from "./map/network-map";
+import { api, usd } from "@/lib/api";
+import { ItineraryPanel } from "./itinerary-panel";
+import { RiskPanel } from "./risk-panel";
+import { ImpactPanel } from "./impact-panel";
 
 const NetworkMap = dynamic(() => import("./map/network-map"), {
   ssr: false,
@@ -66,10 +75,15 @@ const NetworkMap = dynamic(() => import("./map/network-map"), {
 
 const views: { id: MapView; label: string; title: string; icon: typeof MapPinned }[] = [
   { id: "tower", label: "Tower", title: "Control tower", icon: MapPinned },
+  { id: "itinerary", label: "Route A→B", title: "Itinerary planner", icon: Navigation },
+  { id: "alerts", label: "Alerts", title: "Alerts and AI analysis", icon: BrainCircuit },
   { id: "forecast", label: "Forecast", title: "Risk forecast", icon: ChartNoAxesCombined },
   { id: "playbook", label: "Playbook", title: "Fallback playbook", icon: ClipboardList },
+  { id: "savings", label: "Savings", title: "Savings vs no fallback", icon: ReceiptText },
   { id: "corridors", label: "Corridors", title: "Corridor access", icon: Route },
 ];
+// Views rendered as a sheet over the map (the map stays mounted underneath).
+const sheetViews: MapView[] = ["itinerary", "alerts", "savings"];
 const subscribeMotion = (callback: () => void) => {
   const query = window.matchMedia("(prefers-reduced-motion: reduce)");
   query.addEventListener("change", callback);
@@ -107,9 +121,11 @@ const clockLabel = () =>
 export function Dashboard({
   network: sourceNetwork,
   initialPlan: sourcePlan,
+  user,
 }: {
   network: SourceNetwork;
   initialPlan: SourcePlan;
+  user?: { name: string; tenant: string };
 }) {
   const network = useMemo(() => displayNetwork(sourceNetwork), [sourceNetwork]);
   const initialPlan = useMemo(
@@ -153,7 +169,7 @@ export function Dashboard({
     {
       id: 0,
       title: "Dispatch plan ready",
-      detail: "Seven communities connected to three supply hubs.",
+      detail: `${sourcePlan.deliveries.length} communities connected to ${sourceNetwork.nodes.filter((n) => n.kind === "hub").length} suppliers.`,
       time: "Start",
     },
   ]);
@@ -201,17 +217,12 @@ export function Dashboard({
       setPending(true);
       setError(null);
       try {
-        const response = await fetch("/api/plan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ closedRoads }),
+        const result = await api<SourcePlan>("plan", {
+          body: { closedRoads },
           signal: request.signal,
         });
-        const result = await response.json();
-        if (!response.ok)
-          throw new Error(result.error ?? "Unable to update the plan.");
         if (request.signal.aborted) return;
-        const next = displayPlan(result as SourcePlan, network);
+        const next = displayPlan(result, network);
         setPlan(next);
         setScenarioId(nextScenario);
         seek(1);
@@ -473,9 +484,20 @@ export function Dashboard({
           <ArrowDownToLine size={14} />
           Export CSV
         </button>
-        <span className="avatar" aria-hidden="true">
-          T4
+        <span className="avatar" title={user ? `${user.name}, ${user.tenant}` : undefined} aria-hidden="true">
+          {(user?.name ?? "T4").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
         </span>
+        <button
+          className="icon-button"
+          aria-label="Sign out"
+          title="Sign out"
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.assign("/");
+          }}
+        >
+          <LogOut size={14} />
+        </button>
       </header>
 
       <main id="main" className="workspace">
@@ -536,27 +558,34 @@ export function Dashboard({
               </div>
               <div className="side-section reserves">
                 <div className="side-head">
-                  <h2>Supply reserves</h2>
-                  <span>after allocation</span>
+                  <h2>Suppliers</h2>
+                  <span>deliveries served</span>
                 </div>
                 {network.nodes
                   .filter((n) => n.kind === "hub")
-                  .map((hub) => (
-                    <div className="hub-reserve" key={hub.id}>
-                      <span>{hub.name}</span>
-                      <i>
-                        <b
-                          style={{
-                            width: `${(plan.stockRemaining[hub.id] / hub.stockTonnes) * 100}%`,
-                          }}
-                        />
-                      </i>
-                      <strong>
-                        {plan.stockRemaining[hub.id]}
-                        <small>t</small>
-                      </strong>
-                    </div>
-                  ))}
+                  .map((hub) => {
+                    const served = plan.deliveries.filter((d) => d.supplierId === hub.id).length;
+                    return (
+                      <div className="hub-reserve" key={hub.id}>
+                        <span>{hub.name}</span>
+                        <i>
+                          <b style={{ width: `${(served / Math.max(1, plan.deliveries.length)) * 100}%` }} />
+                        </i>
+                        <strong>{served}</strong>
+                      </div>
+                    );
+                  })}
+                {plan.summary.unreachable > 0 && (
+                  <div className="hub-reserve">
+                    <span>
+                      <Plane size={11} /> Air (last resort)
+                    </span>
+                    <i>
+                      <b style={{ width: `${(plan.summary.unreachable / plan.deliveries.length) * 100}%` }} />
+                    </i>
+                    <strong>{plan.summary.unreachable}</strong>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -591,6 +620,38 @@ export function Dashboard({
               stale={staleForecast}
               onRefresh={() => selectView("forecast")}
             />
+          )}
+          {sheetViews.includes(view) && (
+            <div className="side-section grow">
+              <div className="side-head">
+                <h2>Current closures</h2>
+                <span>{plan.closedRoads.length} closed</span>
+              </div>
+              <p className="side-intro">
+                {view === "itinerary"
+                  ? "Itineraries are planned on the network as it is now. Close a corridor here, on the map or in the Corridors view, then re-plan."
+                  : view === "alerts"
+                    ? "Simulations run on top of these closures. Analyse the alerts, pick issues, then simulate."
+                    : "The savings table compares these closures with operating without a prepared fallback."}
+              </p>
+              <div className="corridor-list" aria-busy={pending}>
+                {plan.closedRoads.length === 0 && <p className="side-intro">All corridors are open.</p>}
+                {plan.closedRoads.map((id) => {
+                  const road = network.corridors.find((r) => r.id === id);
+                  return (
+                    <div className="corridor-item closed" key={id}>
+                      <div className="corridor-main">
+                        <strong>{road?.name ?? id}</strong>
+                        <span>{road ? `${road.mode === "river" ? "River" : "Road"}, ${Math.round(road.distanceKm)} km` : "transfer"}</span>
+                      </div>
+                      <button className="button small" disabled={pending} onClick={() => toggleRoad(id)}>
+                        Reopen
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
           {view === "corridors" && (
             <div className="side-section grow">
@@ -673,6 +734,13 @@ export function Dashboard({
               </button>
             </div>
           )}
+          {sheetViews.includes(view) && (
+            <div className="tool-sheet">
+              {view === "itinerary" && <ItineraryPanel network={sourceNetwork} closedRoads={plan.closedRoads} />}
+              {view === "alerts" && <RiskPanel network={sourceNetwork} closedRoads={plan.closedRoads} />}
+              {view === "savings" && <ImpactPanel network={sourceNetwork} closedRoads={plan.closedRoads} />}
+            </div>
+          )}
           {view === "tower" &&
             (inspectorOpen ? (
               <JourneyInspector
@@ -691,7 +759,7 @@ export function Dashboard({
             ))}
         </NetworkMap>
 
-        {view !== "corridors" && (
+        {view !== "corridors" && !sheetViews.includes(view) && (
           <section className="bottom-strip">
             {view === "tower" && (
               <TransportTimeline
@@ -836,12 +904,12 @@ function JourneyInspector({
       </div>
       <div className="journey-path">
         {delivery.path.length ? (
-          delivery.path.map((id, i) => (
+          delivery.path.filter((id) => !id.endsWith("-port")).map((id, i, path) => (
             <span key={`${id}-${i}`}>
               {i > 0 && <ArrowRight size={12} aria-hidden="true" />}
               {i === 0 && <Warehouse size={13} aria-hidden="true" />}
               <strong>{name(id)}</strong>
-              {i === delivery.path.length - 1 && <Package size={13} aria-hidden="true" />}
+              {i === path.length - 1 && <Package size={13} aria-hidden="true" />}
             </span>
           ))
         ) : (
@@ -874,10 +942,14 @@ function JourneyInspector({
           </dd>
         </div>
         <div>
-          <dt>Food at destination</dt>
+          <dt>Cost per tonne</dt>
           <dd>
-            {delivery.foodDays}
-            <small> days left</small>
+            {usd(delivery.costPerTonne)}
+            <small>
+              {delivery.plannedCostPerTonne !== null && delivery.plannedCostPerTonne !== delivery.costPerTonne
+                ? ` plan ${usd(delivery.plannedCostPerTonne)}`
+                : ` ${delivery.modes.join(" + ")}`}
+            </small>
           </dd>
         </div>
       </dl>

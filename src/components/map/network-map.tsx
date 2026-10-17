@@ -42,7 +42,7 @@ import {
 } from "./geometry";
 import { SchematicMap } from "./schematic-map";
 
-export type MapView = "tower" | "forecast" | "playbook" | "corridors";
+export type MapView = "tower" | "itinerary" | "alerts" | "forecast" | "playbook" | "savings" | "corridors";
 
 interface Props {
   network: Network;
@@ -545,16 +545,16 @@ export default function NetworkMap({
       const { Marker } = await import("maplibre-gl");
       if (cancelled || !map) return;
       for (const node of network.nodes) {
-        if (node.kind === "junction") continue;
+        if (node.kind === "junction" || node.kind === "port") continue;
         const el = document.createElement("button");
         el.type = "button";
         const delivery = plan.deliveries.find((d) => d.communityId === node.id);
         el.className = `map-node ${node.kind} ${delivery ? `status-${delivery.status}` : ""}`;
-        el.innerHTML = `<span class="node-symbol">${node.kind === "hub" ? warehouseIcon : "<span></span>"}</span><span class="node-label"><strong>${node.name}</strong><small>${node.kind === "hub" ? `${plan.stockRemaining[node.id]} t reserve` : `${(node.people / 1000).toFixed(1)}k people`}</small></span>`;
+        el.innerHTML = `<span class="node-symbol">${node.kind === "hub" ? warehouseIcon : "<span></span>"}</span><span class="node-label"><strong>${node.name}</strong><small>${node.kind === "hub" ? (node.air ? "supplier · airstrip" : "supplier") : `${(node.people / 1000).toFixed(1)}k people`}</small></span>`;
         el.setAttribute(
           "aria-label",
           node.kind === "hub"
-            ? `${node.name} supply hub, ${plan.stockRemaining[node.id]} tonnes remaining`
+            ? `${node.name} supplier${node.air ? " with airstrip" : ""}`
             : `Select delivery to ${node.name}${delivery ? `, ${statusMeta[delivery.status].label}` : ""}`,
         );
         el.addEventListener("click", (event) => {
@@ -575,7 +575,8 @@ export default function NetworkMap({
         );
       }
       for (const id of plan.closedRoads) {
-        const road = network.corridors.find((r) => r.id === id)!;
+        const road = network.corridors.find((r) => r.id === id);
+        if (!road) continue; // e.g. a port transfer: closed in the model, not drawn
         const el = document.createElement("button");
         el.type = "button";
         el.className = "closure-marker";

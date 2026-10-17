@@ -85,8 +85,9 @@ export function ForecastControls({
           {pending ? "Exploring 2,000 scenarios" : "Run 2,000 scenarios"}
         </button>
         <p className="model-note">
-          Hypothetical probabilities and independent corridor failures. No live
-          weather or security feeds.
+          Your scenario probabilities, simulated on the server: corridors inside
+          a hazard area fail together, with consequences by hazard and road
+          surface. For news-based issues use Alerts.
         </p>
       </div>
       {forecast && (
