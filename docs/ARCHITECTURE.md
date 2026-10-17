@@ -69,9 +69,9 @@ MapLibre is installed through npm. Its worker URL is declared explicitly so Next
 
 The risk forecast and fallback playbook are browser-only features. They add no API endpoint and do not modify the planning service. See [Frontend design and mapping](FRONTEND.md) for the simulation assumptions and geographic sources.
 
-## 6. Light theme and accessibility
+## 6. Night theme and accessibility
 
-The app declares `color-scheme: light` and has no theme toggle or dark-mode override. Surfaces are white with gray borders. Green is limited to route selection, supply markers and positive status indicators.
+The app declares `color-scheme: dark` and has no theme toggle. Surfaces are graphite panels over a dark hillshaded basemap; the map is the only saturated element. Colour is reserved for meaning: route green for selected routes and on-plan deliveries, river blue for barge legs, amber for supplier changes and coral for unreachable destinations or closed corridors. Text set in a status colour uses a lighter step that clears 4.5:1 on the panel surface, and the four status colours were checked for colour-vision separation with the data-viz palette validator.
 
 Statuses include text and icons. Visible focus states, a skip link, labeled controls, announced recalculation results, reduced motion support and a corridor table complement the canvas map.
 

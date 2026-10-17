@@ -4,7 +4,7 @@
 
 A fullstack food logistics application built with **Next.js, React and TypeScript**. ViaMensa connects a geographic view of South Sudan with server-side route planning, stock allocation and disruption scenarios.
 
-The interface uses a light theme: white surfaces, neutral typography and restrained green accents. MapLibre renders a detailed South Sudan map, geographic road and river paths, and animated trucks and barges. The frontend redesign preserves the existing planning API and server logic.
+The interface is a night-operations control room: the map is the hero, and quiet glass panels sit around it. MapLibre renders South Sudan on a dark hillshaded basemap derived from the cached OpenFreeMap style, with geographic road and river paths, hatched hazard footprints and animated trucks and barges. Colour carries meaning only (route green, river blue, new-supplier amber, unreachable coral) and every status also has an icon and a label. The frontend redesign preserves the existing planning API and server logic.
 
 ## Quick start
 
@@ -16,6 +16,8 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000). No environment variables, API keys, Python installation or launcher scripts are required.
+
+Views are deep-linkable: `/#forecast`, `/#playbook`, `/#corridors`, or `/?view=forecast` for links that must survive redirects.
 
 For a production build:
 
@@ -30,7 +32,7 @@ Use `npm run dev -- --port 3001` to change the port.
 
 | Area | Behavior |
 | --- | --- |
-| Control tower | Three hubs, seven communities and fifteen geographic corridors on a light OpenFreeMap basemap. |
+| Control tower | Three hubs, seven communities and fifteen geographic corridors on a night basemap derived from the cached OpenFreeMap style. |
 | Transport animation | Trucks and barges follow cached road and river geometry, synchronized with a scrubber, pause, restart and playback speed controls. |
 | Scenario planning | Presets and individual closures trigger server-side recalculation of routes, suppliers and stock. |
 | Dispatch board | Search communities, filter deliveries needing attention and select a destination. |
@@ -48,7 +50,7 @@ Use `npm run dev -- --port 3001` to change the port.
 | Frontend | React components, TypeScript and responsive CSS |
 | Framework | Next.js App Router |
 | Backend | Next.js Route Handlers and a server-side TypeScript planning service |
-| Map | MapLibre GL JS with a light OpenFreeMap vector basemap and OpenStreetMap attribution |
+| Map | MapLibre GL JS with a night basemap derived from the cached OpenFreeMap vector style and OpenStreetMap attribution |
 | Data | Typed synthetic fixtures; stateless scenario calculations |
 | Verification | ESLint, TypeScript and the Node test runner through `tsx` |
 
@@ -57,7 +59,7 @@ src/
   app/
     api/network/route.ts      Network endpoint
     api/plan/route.ts         Baseline and recalculation endpoints
-    globals.css              Light theme and responsive layout
+    globals.css              Night theme, control-room grid and responsive layout
     layout.tsx               Root layout and metadata
     page.tsx                 Server-rendered initial plan
   components/
