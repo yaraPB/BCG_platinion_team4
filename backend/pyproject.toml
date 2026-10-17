@@ -1,0 +1,42 @@
+[project]
+name = "viamensa-api"
+version = "0.1.0"
+description = "ViaMensa routing and disruption-planning API"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "alembic>=1.13",
+    "anthropic>=1.15.0",
+    "argon2-cffi>=23.1",
+    "email-validator>=2.3.0",
+    "fastapi>=0.115",
+    "numpy>=2.0",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "pyjwt>=2.9",
+    "sqlalchemy>=2.0.30",
+    "uvicorn[standard]>=0.30",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/intel/claude.py" = ["E501"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "networkx>=3.7",
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]

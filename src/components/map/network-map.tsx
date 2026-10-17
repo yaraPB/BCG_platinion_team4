@@ -89,19 +89,20 @@ export default function NetworkMap({ network, plan, baseline, selectedId, clock,
       const { Marker } = await import("maplibre-gl");
       if (cancelled || !map) return;
       for (const node of network.nodes) {
-        if (node.kind === "junction") continue;
+        if (node.kind === "junction" || node.kind === "port") continue;
         const el = document.createElement("button");
         el.type = "button";
         el.className = `map-node ${node.kind} ${node.id === selectedId ? "selected" : ""}`;
         const delivery = plan.deliveries.find(d => d.communityId === node.id);
         if (delivery?.status === "unreachable") el.classList.add("unreachable");
-        el.innerHTML = `<span class="node-symbol">${node.kind === "hub" ? warehouseIcon : '<span></span>'}</span><span class="node-label"><strong>${node.name}</strong><small>${node.kind === "hub" ? `${plan.stockRemaining[node.id]} t reserve` : `${(node.people / 1000).toFixed(1)}k people`}</small></span>`;
-        el.setAttribute("aria-label", node.kind === "hub" ? `${node.name} supply hub, ${plan.stockRemaining[node.id]} tonnes remaining` : `Select delivery to ${node.name}`);
+        el.innerHTML = `<span class="node-symbol">${node.kind === "hub" ? warehouseIcon : '<span></span>'}</span><span class="node-label"><strong>${node.name}</strong><small>${node.kind === "hub" ? (node.air ? "supplier · airstrip" : "supplier") : `${(node.people / 1000).toFixed(1)}k people`}</small></span>`;
+        el.setAttribute("aria-label", node.kind === "hub" ? `${node.name} supplier` : `Select delivery to ${node.name}`);
         el.addEventListener("click", event => { event.stopPropagation(); if (node.kind === "community") callbacks.current.onSelect(node.id); else { const delivery = plan.deliveries.find(d => d.supplierId === node.id); if (delivery) callbacks.current.onSelect(delivery.communityId); } });
         markers.push(new Marker({ element: el, anchor: "left", offset: [-13, 0] }).setLngLat(node.coordinates).addTo(map));
       }
       for (const id of plan.closedRoads) {
-        const road = network.corridors.find(r => r.id === id)!;
+        const road = network.corridors.find(r => r.id === id);
+        if (!road) continue;  // e.g. a port transfer: closed in the model, not drawn on the map
         const el = document.createElement("button"); el.type = "button"; el.className = "closure-marker"; el.textContent = "×"; el.title = `${road.name} closed`; el.setAttribute("aria-label", `Inspect closed ${road.name}`);
         el.onclick = event => { event.stopPropagation(); setRoadId(id); };
         markers.push(new Marker({ element: el }).setLngLat(pointAlong(road.coordinates, .5).point).addTo(map));

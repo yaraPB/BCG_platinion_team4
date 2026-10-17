@@ -1,105 +1,76 @@
-# JSON API
+# API (v1)
 
-The Next.js app serves all endpoints. Authentication is not required for this synthetic, stateless scenario model.
+Base URL: the API container (`https://<prefix>-api.<env-domain>` on Azure, `http://localhost:8000` locally). Interactive OpenAPI: `/docs`. Field names are camelCase. Errors: `{"detail": "..."}` with 400 / 401 / 404 / 413 / 422 / 429.
 
-## GET `/api/network`
+The web app calls these through its same-origin proxy (`/api/v1/...`), which adds the bearer token from the session cookie.
 
-Returns the input network:
+## Auth
 
-| Field | Type | Description |
+| Method | Path | Body | Returns |
+| --- | --- | --- | --- |
+| POST | `/v1/auth/token` | `{email, password}` | `{accessToken, tokenType, expiresIn, tenant, user}` |
+| GET | `/v1/me` | — | user and client |
+
+All other `/v1` endpoints need `Authorization: Bearer <token>` and only see the signed-in client's data.
+
+## Network and planning
+
+| Method | Path | Purpose |
 | --- | --- | --- |
-| `region` | string | Display name |
-| `notice` | string | Dataset provenance and limitations |
-| `nodes` | array | Hubs, communities and junctions |
-| `corridors` | array | IDs, endpoints, travel hours and risk values |
-| `scenarios` | array | Labels, descriptions and `closedRoads` presets |
+| GET | `/v1/network` | Nodes (hub, community, junction, port), corridors (mode, surface, km, hours, costPerTonne, geometry), scenarios |
+| GET | `/v1/plan` | Baseline plan for every community (all corridors open) |
+| POST | `/v1/plan` | `{closedRoads[], downNodes[], objective}` → plan under closures |
+| POST | `/v1/itineraries` | `{origin, destination, closedRoads[], objective, tonnes?}` → best option and ranked alternatives |
 
-See `src/lib/types.ts` for the full types and `src/lib/data/network.ts` for editable inputs.
+`objective` is `cost` (default) or `time`. Each delivery or option carries `costPerTonne`, `hours`, `modes`, `path`/`nodes`, `roadIds`/`corridors`, and `coordinates` (road/river geometry for drawing).
 
-## GET `/api/plan`
+Itinerary `status`: `on-plan`, `rerouted` (same supplier, detour), `supplier-changed` (another supplier is cheaper or the only one connected), `airlift` (nothing reaches by road or river). `split: true` means the closures disconnected the supplier from the destination; `destinationComponent` lists the nodes still connected to it.
 
-Returns the all-open baseline: seven on-plan destinations, 110,400 reachable people and 168 tonnes assigned. Plan responses include `Cache-Control: no-store`.
+The plan endpoint keeps the web types' shape: `status` is `unreachable` when only air delivery is left, with details in `airlift` and `fallback: "airlift"`.
 
-## POST `/api/plan`
+## Alerts and analysis
 
-Calculates a fresh plan. It does not change the baseline or store a scenario.
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/alerts` | Client alerts (seed samples are flagged `isSample`) |
+| POST | `/v1/alerts` | `{title, body, source?, url?, publishedAt?}` |
+| DELETE | `/v1/alerts/{id}` | Remove an alert |
+| POST | `/v1/alerts/analyze` | `{alertIds?, horizonDays?, useLlm?}` → ranked issues mapped to corridor/node IDs |
+| GET | `/v1/analyses/latest`, `/v1/analyses/{id}` | Stored analyses |
 
-### Request
+Each issue has `likelihood` (`very_likely` / `likely` / `possible` / `unlikely`), `severity`, the band `probability` used in simulation, `affectedCorridorIds`, `affectedNodeIds`, `durationDays`, `rationale` and `evidenceAlertIds`. `engine` is `claude` or `rules`; `engineNote` explains any fallback.
 
-```http
-POST /api/plan
-Content-Type: application/json
-```
+## Simulation
 
-```json
-{ "closedRoads": ["juba-bor"] }
-```
-
-`closedRoads` is required and must be an array of known ID strings. `[]` resets the calculation. Duplicate IDs are deduplicated. The array may not contain more entries than the network has corridors. The body limit is 4,096 bytes, checked while reading the request stream.
-
-### Response
-
-Example excerpt (the `deliveries` array is omitted):
+`POST /v1/simulations`
 
 ```json
 {
-  "closedRoads": ["juba-bor"],
-  "stockRemaining": { "juba": 26, "wau": 64, "malakal": 32 },
-  "summary": {
-    "reachablePeople": 110400,
-    "totalPeople": 110400,
-    "assignedTonnes": 168,
-    "totalTonnes": 168,
-    "onPlan": 6,
-    "rerouted": 1,
-    "supplierChanged": 0,
-    "unreachable": 0
-  }
+  "analysisId": "…", "issueIds": ["issue-1", "issue-2"],
+  "hazards": [{"title": "Jonglei floods", "kind": "flood", "likelihood": "likely", "corridorIds": ["bor-pibor"]}],
+  "closedRoads": [], "runs": 5000, "seed": 42, "objective": "cost",
+  "origin": "juba", "destination": "bor"
 }
 ```
 
-The complete response includes `deliveries` in allocation priority order:
+Give `analysisId` and/or `hazards`. Give `origin` and `destination` together for one itinerary, or omit both for every planned delivery. Response fields:
+- `runs`, `uniqueStates`, `elapsedMs`, `pNetworkSplit`
+- per hazard: `simulatedOccurrence`
+- `corridorClosure` (probability per corridor)
+- `targets[]`: `statusShare`, `pBaselineBlocked`, cost and time quantiles, `topPlans`, `expectedSavings`
+- `planB[]` (single itinerary only)
+- `playbook[]`: what each issue changes relative to the current closures
+- `impact`, `modelNotes`
 
-| Field | Description |
-| --- | --- |
-| `communityId`, `name` | Destination identity |
-| `people`, `ipc`, `foodDays` | Population and priority inputs |
-| `requestedTonnes`, `assignedTonnes` | Requested and allocated food |
-| `plannedSupplierId`, `supplierId` | Planned and selected hub; selected hub is `null` when unserved |
-| `status` | `on-plan`, `rerouted`, `supplier-changed` or `unreachable` |
-| `hours` | Sum of travel times; `null` when unserved |
-| `path`, `roadIds` | Ordered node and corridor IDs from hub to destination |
-| `coordinates` | Ordered `[longitude, latitude]` pairs |
-| `reason` | Explanation of the assignment or failure |
+Runs are stored: `GET /v1/simulations`, `GET /v1/simulations/{id}`.
 
-### Errors
+## Savings and assumptions
 
-Error responses have the shape `{ "error": "Human-readable explanation." }`.
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/v1/impact` | `{closedRoads[], closureDays}` → table per disrupted delivery (USD saved vs emergency airlift, extra USD vs plan, people-days protected vs waiting) with totals and the basis statement |
+| GET | `/v1/assumptions` | Every unit rate (value, unit, sourced / estimate / client, source and URL), likelihood bands, hazard consequence parameters |
 
-| Status | Cause |
-| --- | --- |
-| `400` | Missing body, malformed JSON, invalid field shape or unknown corridor |
-| `413` | Body exceeds 4,096 bytes |
-| `415` | Content type is not `application/json` |
-| `500` | Unexpected calculation or request-reading failure |
+## Ops
 
-### Client example
-
-```typescript
-const response = await fetch("/api/plan", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ closedRoads: ["juba-bor"] }),
-});
-const result = await response.json();
-if (!response.ok) throw new Error(result.error);
-```
-
-### Scenario examples
-
-| Closure set | Expected result |
-| --- | --- |
-| `[]` | All seven destinations on plan |
-| `["juba-bor"]` | Bor rerouted using its planned supplier |
-| `["juba-bor", "bor-malakal", "rumbek-bentiu"]` | Bor unserved; reachable population becomes 92,000 |
-| `["juba-bor", "rumbek-bentiu", "bentiu-malakal", "juba-yei"]` | Two supplier changes and one rerouted delivery |
+`GET /healthz` (liveness), `GET /readyz` (database reachable).

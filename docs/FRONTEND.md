@@ -2,13 +2,13 @@
 
 ## Scope
 
-This redesign changes the React presentation, map assets and browser interactions. Existing route handlers, server planning rules and shared API types are unchanged. The application still consumes its existing `POST /api/plan` response when a corridor is closed or reopened.
+The React presentation runs on the ViaMensa API (`backend/`). The public landing page is at `/`, sign-in at `/login`, and the client workspace at `/app`. All data calls go through the same-origin proxy `/api/v1/*`, which attaches the session token from an httpOnly cookie: network and plan, itineraries, alerts and analysis, simulations, savings.
 
 ## Screen structure
 
 1. A compact navigation rail and workspace header.
 2. Four operational metrics: people connected, food allocated, deliveries on plan and deliveries requiring attention.
-3. Control tower, risk forecast, fallback playbook and corridor views.
+3. Control tower, itinerary (A→B), alerts & AI (news analysis → simulation → playbook), risk forecast, fallback playbook, savings and corridor views.
 4. The control tower places the dispatch list alongside the geographic map, with transport playback underneath and selected-journey details below.
 5. On narrow screens the map comes first, followed by playback, a two-column delivery list and journey details.
 
@@ -32,13 +32,14 @@ Trucks and barges follow the cached path in each delivery leg. Animation is time
 ## Component boundaries
 
 - `dashboard.tsx`: selected view, scenario, delivery, API request lifecycle, export and event log.
-- `model/display-network.ts`: enriches API results with frontend geometry, transport modes and illustrative hazards. It preserves the API's supplier and path decisions.
+- `model/display-network.ts`: maps API corridors (OpenStreetMap geometry, mode, distance) to the display model, computes exposure of each corridor to the scenario hazard areas geometrically, and hides port transfers. It preserves the API's supplier and path decisions.
 - `map/network-map.tsx`: MapLibre lifecycle, vector layers, geographic markers and shared-clock transport animation.
 - `map/geometry.ts`: distance-weighted path interpolation, bearings, hazard circles and vehicle icons.
 - `map/schematic-map.tsx`: geographic SVG fallback if MapLibre initialization fails.
 - `transport-timeline.tsx`: playback controls, time scrubber and delivery tracks.
-- `model/simulation.ts`: deterministic, browser-only hypothetical scenario sampler. Work is chunked to keep inputs responsive and supports cancellation.
+- `model/simulation.ts`: sends the risk-forecast assumptions to `POST /v1/simulations` (correlated server model) and maps the response to the forecast and playbook views.
 - `forecast-workspace.tsx`: assumption sliders, outcome charts, corridor exposure and fallback playbook.
+- `itinerary-panel.tsx`, `risk-panel.tsx`, `impact-panel.tsx`: A→B planner, alert analysis plus simulation, and savings tables.
 
 ## Geographic sources
 
@@ -55,11 +56,7 @@ River paths include illustrative terminal connections. Transport modes, timings 
 
 ## Forecast interpretation
 
-For each corridor, the browser combines hazard probability and synthetic exposure. The 72-hour survival probability is the product of each hazard's survival contribution; shorter horizons scale that survival probability by the horizon ratio. Explicitly closed corridors remain closed.
-
-The simulation samples 2,000 independent corridor-failure sets and explores reachability, fallback supply and available stock. It follows the existing plan's priority order and keeps a planned supplier when reachable with sufficient stock. It is a presentation preview, separate from the authoritative dispatch response. Equal-cost route ties may differ from the server's Dijkstra implementation.
-
-The playbook reports observed contingencies, a frequently co-occurring baseline closure and the 90th percentile of extra fallback demand per hub. Those figures are illustrative; they do not place orders or persist plans.
+The sliders are the planner's 72-hour probabilities for three scenario areas. Shorter horizons scale survival by the horizon ratio. The server runs the correlated disruption model: areas can co-occur; corridors inside an area fail together, with consequences that depend on the hazard and road surface. Every future is re-planned (reroute, supplier switch or airlift), and identical futures are solved once. Explicitly closed corridors stay closed. For issues extracted from news and field reports, use **Alerts & AI**. The playbook shows the most frequent contingency per community, the corridor that most often triggered it, and the 90th-percentile fallback load per supplier.
 
 ## Verification
 

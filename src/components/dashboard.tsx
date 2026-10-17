@@ -2,7 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Activity, ArrowDownToLine, ArrowRight, ChartNoAxesCombined, Check, ChevronDown, CircleAlert, ClipboardList, Compass, MapPinned, Package, RotateCcw, Route, Search, Ship, Truck, Users, Warehouse, X } from "lucide-react";
+import { Activity, ArrowDownToLine, ArrowRight, BrainCircuit, ChartNoAxesCombined, Check, ChevronDown, CircleAlert, ClipboardList, Compass, LogOut, MapPinned, Navigation, Package, Plane, ReceiptText, RotateCcw, Route, Search, Ship, Truck, Users, Warehouse, X } from "lucide-react";
+import { api, usd } from "@/lib/api";
+import { ItineraryPanel } from "./itinerary-panel";
+import { RiskPanel } from "./risk-panel";
+import { ImpactPanel } from "./impact-panel";
 import type { Network as SourceNetwork, Plan as SourcePlan } from "@/lib/types";
 import type { Delivery, Forecast, ForecastInput, HazardId, Network, SimulationClock } from "./model/types";
 import { displayNetwork, displayPlan } from "./model/display-network";
@@ -13,11 +17,11 @@ import { TransportTimeline } from "./transport-timeline";
 import { ForecastWorkspace, PlaybookWorkspace } from "./forecast-workspace";
 
 const NetworkMap = dynamic(() => import("./map/network-map"), { ssr: false, loading: () => <div className="map-loading"><Compass size={28} /><span>Preparing the South Sudan network…</span></div> });
-const tabs = [{ id: "tower", label: "Control tower", icon: MapPinned }, { id: "forecast", label: "Risk forecast", icon: ChartNoAxesCombined }, { id: "playbook", label: "Fallback playbook", icon: ClipboardList }, { id: "corridors", label: "Corridors", icon: Route }] as const;
+const tabs = [{ id: "tower", label: "Control tower", icon: MapPinned }, { id: "itinerary", label: "Itinerary", icon: Navigation }, { id: "alerts", label: "Alerts & AI", icon: BrainCircuit }, { id: "forecast", label: "Risk forecast", icon: ChartNoAxesCombined }, { id: "playbook", label: "Fallback playbook", icon: ClipboardList }, { id: "savings", label: "Savings", icon: ReceiptText }, { id: "corridors", label: "Corridors", icon: Route }] as const;
 const subscribeMotion = (callback: () => void) => { const query = window.matchMedia("(prefers-reduced-motion: reduce)"); query.addEventListener("change", callback); return () => query.removeEventListener("change", callback); };
 const probabilityDefaults = (network: Network) => Object.fromEntries(network.hazards.map(h => [h.id, h.probability])) as Record<HazardId, number>;
 
-export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: { network: SourceNetwork; initialPlan: SourcePlan }) {
+export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan, user }: { network: SourceNetwork; initialPlan: SourcePlan; user?: { name: string; tenant: string } }) {
   const network = useMemo(() => displayNetwork(sourceNetwork), [sourceNetwork]);
   const initialPlan = useMemo(() => displayPlan(sourcePlan, network), [sourcePlan, network]);
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("tower");
@@ -35,7 +39,7 @@ export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: {
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [forecastPending, setForecastPending] = useState(false);
   const [forecastKey, setForecastKey] = useState("");
-  const [events, setEvents] = useState([{ id: 0, title: "Dispatch plan ready", detail: "Seven communities connected to three supply hubs.", time: "START" }]);
+  const [events, setEvents] = useState([{ id: 0, title: "Dispatch plan ready", detail: `${sourcePlan.deliveries.length} communities connected to ${sourceNetwork.nodes.filter(n => n.kind === "hub").length} suppliers.`, time: "START" }]);
   const clock = useRef<SimulationClock>({ hour: 3 });
   const seek = useCallback((hour: number) => { clock.current.hour = hour; }, []);
   const planRequest = useRef<AbortController | null>(null);
@@ -55,11 +59,9 @@ export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: {
     const request = new AbortController(); planRequest.current = request;
     setPending(true); setError(null);
     try {
-      const response = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ closedRoads }), signal: request.signal });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Unable to update the plan.");
+      const result = await api<SourcePlan>("plan", { body: { closedRoads }, signal: request.signal });
       if (request.signal.aborted) return;
-      const next = displayPlan(result as SourcePlan, network);
+      const next = displayPlan(result, network);
       setPlan(next); setScenarioId(nextScenario);
       const detail = `${next.summary.rerouted} rerouted · ${next.summary.supplierChanged} supplier changes · ${next.summary.unreachable} unreachable`;
       setEvents(previous => [{ id: Date.now(), title, detail, time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) }, ...previous].slice(0, 6));
@@ -87,6 +89,11 @@ export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: {
     finally { if (!request.signal.aborted) setForecastPending(false); }
   }
 
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.assign("/");
+  }
+
   function exportPlan() {
     const rows = [["Community", "Supplier", "Status", "People served", "Tonnes", "Travel hours", "Distance km", "Route"], ...plan.deliveries.map(d => [d.name, name(d.supplierId), statusMeta[d.status].label, d.supplierId ? d.people : 0, d.assignedTonnes, d.hours ?? "", d.distanceKm, d.path.map(name).join(" > ")])];
     const csv = rows.map(row => row.map(cell => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\r\n");
@@ -104,7 +111,7 @@ export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: {
       <span className="rail-bottom">V<span>4</span></span>
     </aside>
     <div className="app-body">
-      <header className="app-header"><a className="wordmark" href="#main">ViaMensa<span>FOOD ACCESS NETWORK</span></a><div className="header-divider" /><span className="header-location">Operations <span>/</span> South Sudan</span><div className="header-right"><span className="simulation-badge"><i />Planning simulation</span><span className="avatar">T4</span></div></header>
+      <header className="app-header"><a className="wordmark" href="#main">ViaMensa<span>FOOD ACCESS NETWORK</span></a><div className="header-divider" /><span className="header-location">Operations <span>/</span> South Sudan</span><div className="header-right"><span className="simulation-badge"><i />{user?.tenant ?? "Planning workspace"}</span><span className="avatar" title={user?.name}>{(user?.name ?? "T4").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut size={16} /></button></div></header>
       <main id="main" className="workspace">
         <section className="workspace-heading"><div><p className="eyebrow">FROM SUPPLY TO COMMUNITY</p><h1>Keep food moving<span>.</span></h1><p>A clear route. A ready fallback. Food where it matters.</p></div><button className="button export-button" onClick={exportPlan}><ArrowDownToLine size={15} />Export plan</button></section>
         <section className="metric-strip" aria-label="Network summary">
@@ -123,7 +130,7 @@ export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: {
               <div className="dispatch-heading"><div><h2>Deliveries</h2><span>THIS DISPATCH CYCLE</span></div><b>{plan.deliveries.length}</b></div>
               <div className="dispatch-controls"><div className="segmented"><button aria-pressed={!attentionOnly} onClick={() => setAttentionOnly(false)}>All deliveries</button><button aria-pressed={attentionOnly} onClick={() => setAttentionOnly(true)}>Attention <span>{attention}</span></button></div><label className="search-field"><Search size={15} /><input aria-label="Search communities" placeholder="Find a community…" value={search} onChange={event => setSearch(event.target.value)} /></label></div>
               <div className="delivery-list">{filtered.length ? filtered.map(delivery => <Shipment key={delivery.communityId} delivery={delivery} selected={selectedId === delivery.communityId} supplier={name(delivery.supplierId)} index={plan.deliveries.indexOf(delivery)} onSelect={() => setSelectedId(delivery.communityId)} />) : <p className="empty-state">No deliveries match this view.</p>}</div>
-              <div className="rail-stock"><div><Warehouse size={15} /><strong>Supply reserves</strong><span>after allocation</span></div>{network.nodes.filter(n => n.kind === "hub").map(hub => <div className="hub-reserve" key={hub.id}><span>{hub.name}</span><i><b style={{ width: `${plan.stockRemaining[hub.id] / hub.stockTonnes * 100}%` }} /></i><strong>{plan.stockRemaining[hub.id]}<small> t</small></strong></div>)}</div>
+              <div className="rail-stock"><div><Warehouse size={15} /><strong>Suppliers</strong><span>deliveries served</span></div>{network.nodes.filter(n => n.kind === "hub").map(hub => { const served = plan.deliveries.filter(d => d.supplierId === hub.id).length; return <div className="hub-reserve" key={hub.id}><span>{hub.name}{"air" in hub && hub.air ? " ✈" : ""}</span><i><b style={{ width: `${served / Math.max(1, plan.deliveries.length) * 100}%` }} /></i><strong>{served}</strong></div>; })}{plan.summary.unreachable > 0 && <div className="hub-reserve"><span><Plane size={12} /> Air</span><i><b style={{ width: `${plan.summary.unreachable / plan.deliveries.length * 100}%` }} /></i><strong>{plan.summary.unreachable}</strong></div>}</div>
             </aside>
             <div className="map-and-timeline">
               <NetworkMap network={network} plan={plan} baseline={initialPlan} selectedId={selectedId} clock={clock} reducedMotion={reducedMotion} onSelect={setSelectedId} onToggleRoad={toggleRoad} probabilities={probabilities} />
@@ -133,10 +140,13 @@ export function Dashboard({ network: sourceNetwork, initialPlan: sourcePlan }: {
           <p className="sr-only" role="status">{pending ? "Recalculating deliveries." : `${plan.summary.onPlan} on plan, ${plan.summary.rerouted} rerouted, ${plan.summary.supplierChanged} supplier changes, ${plan.summary.unreachable} unreachable.`}</p>
           <div className="decision-grid"><JourneyDetail delivery={selected} network={network} /><section className="event-panel"><div className="section-label"><Activity size={15} /><h2>Operations log</h2><span>THIS SESSION</span></div><div className="event-list">{events.map(event => <article key={event.id}><time>{event.time}</time><div><strong>{event.title}</strong><p>{event.detail}</p></div></article>)}</div></section></div>
         </section>}
+        {tab === "itinerary" && <section id="view-itinerary" role="tabpanel" aria-labelledby="tab-itinerary"><ItineraryPanel network={sourceNetwork} closedRoads={plan.closedRoads} /></section>}
+        {tab === "alerts" && <section id="view-alerts" role="tabpanel" aria-labelledby="tab-alerts"><RiskPanel network={sourceNetwork} closedRoads={plan.closedRoads} /></section>}
+        {tab === "savings" && <section id="view-savings" role="tabpanel" aria-labelledby="tab-savings"><ImpactPanel network={sourceNetwork} closedRoads={plan.closedRoads} /></section>}
         {tab === "forecast" && <section id="view-forecast" role="tabpanel" aria-labelledby="tab-forecast"><ForecastWorkspace network={network} forecast={forecast} probabilities={probabilities} horizon={horizon} pending={forecastPending} stale={staleForecast} onProbability={(id, p) => setProbabilities(current => ({ ...current, [id]: p }))} onHorizon={setHorizon} onRun={runForecast} onApply={() => { if (!forecast) return; const closed = forecast.roads.filter(r => r.probability >= .5).map(r => r.id); void applyPlan(closed, "custom", "Forecast closures applied"); setTab("tower"); }} /></section>}
         {tab === "playbook" && <section id="view-playbook" role="tabpanel" aria-labelledby="tab-playbook"><PlaybookWorkspace network={network} forecast={forecast} stale={staleForecast} onRefresh={() => setTab("forecast")} /></section>}
         {tab === "corridors" && <section id="view-corridors" role="tabpanel" aria-labelledby="tab-corridors" className="corridor-workspace"><div className="view-heading"><div><p className="eyebrow">NETWORK CONNECTIONS</p><h2>Every corridor, in view.</h2><p>Manage road and river access. Changes recalculate the entire dispatch plan.</p></div><span className="view-count">{plan.closedRoads.length} closed / {network.corridors.length} total</span></div><div className="table-scroll"><table><thead><tr><th>Corridor</th><th>Transport</th><th>Distance</th><th>Travel estimate</th><th>Access</th><th><span className="sr-only">Action</span></th></tr></thead><tbody>{network.corridors.map(road => <tr key={road.id}><td><strong>{road.name}</strong></td><td><span className="mode-label">{road.mode === "river" ? <Ship size={15} /> : <Truck size={15} />}{road.mode === "river" ? "River barge" : "Road convoy"}</span></td><td>{Math.round(road.distanceKm)} km</td><td>{road.hours} h</td><td><span className={`access-state ${plan.closedRoads.includes(road.id) ? "closed" : ""}`}><i />{plan.closedRoads.includes(road.id) ? "Closed" : "Open"}</span></td><td><button className="button" disabled={pending} aria-label={`${plan.closedRoads.includes(road.id) ? "Reopen" : "Close"} ${road.name}`} onClick={() => toggleRoad(road.id)}>{plan.closedRoads.includes(road.id) ? "Reopen" : "Close corridor"}</button></td></tr>)}</tbody></table></div></section>}
-        <footer className="app-footer"><span><Route size={14} />ViaMensa <b>·</b> Team 4</span><p>{network.notice}</p><a href="https://www.openstreetmap.org/" target="_blank" rel="noreferrer">Map data © OpenStreetMap</a></footer>
+        <footer className="app-footer"><span><Route size={14} />ViaMensa <b>·</b> Team 4</span><p>{network.notice} Cycle cost {usd(plan.summary.totalCostUsd)} (plan {usd(plan.summary.plannedCostUsd)}).</p><a href="https://www.openstreetmap.org/" target="_blank" rel="noreferrer">Map data © OpenStreetMap</a></footer>
       </main>
     </div>
   </div>;
@@ -153,5 +163,5 @@ function Shipment({ delivery, selected, supplier, index, onSelect }: { delivery:
 
 function JourneyDetail({ delivery, network }: { delivery: Delivery; network: Network }) {
   const name = (id: string | null) => network.nodes.find(n => n.id === id)?.name ?? "Unassigned";
-  return <section className="journey-panel" aria-label="Selected delivery details"><div className="section-label"><Route size={16} /><h2>Journey to {delivery.name}</h2><StatusBadge status={delivery.status} /></div><div className="journey-content"><div className="journey-path">{delivery.path.length ? delivery.path.map((id, i) => <span key={`${id}-${i}`}>{i > 0 && <ArrowRight size={14} />}{i === 0 && <Warehouse size={17} />}<strong>{name(id)}</strong>{i === delivery.path.length - 1 && <Package size={17} />}</span>) : <span><CircleAlert size={17} />No available supply route</span>}</div><div className="journey-facts"><span><small>FOOD ASSIGNED</small><strong>{delivery.assignedTonnes} <em>/ {delivery.requestedTonnes} t</em></strong></span><span><small>TRAVEL ESTIMATE</small><strong>{delivery.hours ?? "—"} <em>hours</em></strong></span><span><small>DISTANCE</small><strong>{delivery.distanceKm} <em>km</em></strong></span><span><small>FOOD AT DESTINATION</small><strong>{delivery.foodDays} <em>days left</em></strong></span></div><p className="decision-reason"><Check size={16} />{delivery.reason}</p></div></section>;
+  return <section className="journey-panel" aria-label="Selected delivery details"><div className="section-label"><Route size={16} /><h2>Journey to {delivery.name}</h2><StatusBadge status={delivery.status} /></div><div className="journey-content"><div className="journey-path">{delivery.path.length ? delivery.path.filter(id => !id.endsWith("-port")).map((id, i, path) => <span key={`${id}-${i}`}>{i > 0 && <ArrowRight size={14} />}{i === 0 && <Warehouse size={17} />}<strong>{name(id)}</strong>{i === path.length - 1 && <Package size={17} />}</span>) : <span><CircleAlert size={17} />No available supply route</span>}</div><div className="journey-facts"><span><small>FOOD ASSIGNED</small><strong>{delivery.assignedTonnes} <em>/ {delivery.requestedTonnes} t</em></strong></span><span><small>TRAVEL ESTIMATE</small><strong>{delivery.hours ?? "—"} <em>hours</em></strong></span><span><small>DISTANCE</small><strong>{delivery.distanceKm} <em>km</em></strong></span><span><small>COST / TONNE</small><strong>{usd(delivery.costPerTonne)} <em>{delivery.plannedCostPerTonne !== null && delivery.plannedCostPerTonne !== delivery.costPerTonne ? `plan ${usd(delivery.plannedCostPerTonne)}` : delivery.modes.join(" + ")}</em></strong></span></div><p className="decision-reason"><Check size={16} />{delivery.reason}</p></div></section>;
 }

@@ -1,0 +1,7 @@
+[
+  {"id": "open", "label": "All corridors open", "description": "The planned network with every road and river leg open.", "closedRoads": []},
+  {"id": "jonglei-floods", "label": "Jonglei flooding", "description": "Rainy-season flooding closes the Juba–Bor road and the Bor–Pibor, Pibor–Akobo and Bor–Ayod tracks.", "closedRoads": ["juba-bor", "bor-pibor", "pibor-akobo", "bor-ayod"]},
+  {"id": "sobat-conflict", "label": "Sobat corridor insecurity", "description": "Insecurity closes the Sobat river leg and the Ulang–Nasir track.", "closedRoads": ["river-nasir-malakal", "ulang-nasir"]},
+  {"id": "unity-access", "label": "Unity access cut", "description": "The Rumbek–Leer track and the Leer–Bentiu road are closed.", "closedRoads": ["rumbek-leer", "leer-bentiu"]},
+  {"id": "compound", "label": "Compound disruption", "description": "Jonglei flooding, Sobat insecurity and an accident on the Juba–Nimule highway at the same time.", "closedRoads": ["juba-bor", "bor-pibor", "pibor-akobo", "bor-ayod", "river-nasir-malakal", "ulang-nasir", "juba-nimule"]}
+]
