@@ -1,9 +1,8 @@
 "use client";
 
-import { ArrowRight, Play, ShieldCheck, Warehouse } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import type { Forecast, ForecastInput, HazardId, Network } from "./model/types";
 import { formatNumber, percent, statusMeta } from "@/lib/presentation";
-import { StatusBadge } from "./status-badge";
 
 const statuses = Object.keys(statusMeta) as (keyof typeof statusMeta)[];
 
@@ -87,7 +86,7 @@ export function ForecastControls({
         <p className="model-note">
           Your scenario probabilities, simulated on the server: corridors inside
           a hazard area fail together, with consequences by hazard and road
-          surface. For news-based issues use Alerts.
+          surface. For a news alert, use Simulate alert in the Tower view.
         </p>
       </div>
       {forecast && (
@@ -242,147 +241,6 @@ export function OutlookChart({
             <Play size={14} />
             {pending ? "Exploring 2,000 scenarios" : "Run 2,000 scenarios"}
           </button>
-        </div>
-      )}
-    </section>
-  );
-}
-
-/** Left column of the playbook view: supply reserves to hold at each hub. */
-export function PlaybookReserves({
-  network,
-  forecast,
-  stale,
-  onRefresh,
-}: {
-  network: Network;
-  forecast: Forecast | null;
-  stale: boolean;
-  onRefresh: () => void;
-}) {
-  const name = (id: string | null) =>
-    network.nodes.find((n) => n.id === id)?.name ?? "No available hub";
-  return (
-    <div className="side-section">
-      <div className="side-head">
-        <h2>Reserves to hold</h2>
-        {forecast ? (
-          stale ? (
-            <span className="stale-chip">Forecast outdated</span>
-          ) : (
-            <span>90th percentile of fallback demand</span>
-          )
-        ) : (
-          <span>Needs a forecast</span>
-        )}
-      </div>
-      {forecast ? (
-        <>
-          <div className="reserve-list">
-            {forecast.hubs.map((h) => (
-              <article className="reserve-card" key={h.hubId}>
-                <span className="reserve-icon">
-                  <Warehouse size={16} />
-                </span>
-                <div>
-                  <strong>{name(h.hubId)}</strong>
-                  <span>Called on as a fallback in {percent(h.fallbackProbability)} of scenarios</span>
-                  <i>
-                    <b style={{ width: percent(h.fallbackProbability) }} />
-                  </i>
-                </div>
-                <b className="reserve-tonnes">
-                  {h.reserveTonnes}
-                  <small>t</small>
-                </b>
-              </article>
-            ))}
-          </div>
-          <p className="model-note">
-            Simulated extra demand, not orders or confirmed inventory.
-          </p>
-        </>
-      ) : (
-        <div className="side-empty">
-          <ShieldCheck size={22} />
-          <p>Run a risk simulation to see where to pre-position food.</p>
-        </div>
-      )}
-      <button className="button wide" onClick={onRefresh}>
-        {forecast ? "Adjust forecast" : "Open risk forecast"}
-        <ArrowRight size={14} />
-      </button>
-    </div>
-  );
-}
-
-/** Bottom strip of the playbook view: the most likely contingency per community. */
-export function PlaybookTable({
-  network,
-  forecast,
-}: {
-  network: Network;
-  forecast: Forecast | null;
-}) {
-  const name = (id: string | null) =>
-    network.nodes.find((n) => n.id === id)?.name ?? "No available hub";
-  return (
-    <section className="playbook-strip" aria-label="Fallback playbook">
-      <div className="strip-head">
-        <h2>Fallback per community</h2>
-        <span className="strip-note">From the last simulation</span>
-      </div>
-      {forecast ? (
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Community</th>
-                <th>Most likely contingency</th>
-                <th>Observed trigger</th>
-                <th>Preparation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {forecast.destinations.map((d) => (
-                <tr key={d.communityId}>
-                  <td>
-                    <strong>{name(d.communityId)}</strong>
-                  </td>
-                  <td>
-                    {d.contingency ? (
-                      <span className="cell-status">
-                        <StatusBadge status={d.contingency.status} />
-                        <small>{percent(d.contingency.probability)} of scenarios</small>
-                      </span>
-                    ) : (
-                      <span className="cell-status">
-                        <StatusBadge status="on-plan" />
-                        <small>Plan holds</small>
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {network.corridors.find((r) => r.id === d.triggerId)?.name ??
-                      "No recurrent closure"}
-                  </td>
-                  <td>
-                    {!d.contingency
-                      ? "Maintain the planned dispatch."
-                      : d.contingency.status === "unreachable"
-                        ? "Review access and pre-position food."
-                        : d.contingency.status === "supplier-changed"
-                          ? `Prepare an allocation from ${name(d.contingency.hubId)}.`
-                          : `Prepare an alternative route from ${name(d.contingency.hubId)}.`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="strip-empty">
-          <p>The playbook fills in once a risk simulation has run.</p>
         </div>
       )}
     </section>

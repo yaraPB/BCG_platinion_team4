@@ -12,18 +12,18 @@ import {
 import {
   ArrowDownToLine,
   ArrowRight,
-  BrainCircuit,
   Presentation,
   ChartNoAxesCombined,
   Check,
   ChevronDown,
   CircleAlert,
-  ClipboardList,
   History,
   LogOut,
   MapPinned,
   Navigation,
   Package,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelRightOpen,
   Plane,
   ReceiptText,
@@ -31,6 +31,7 @@ import {
   Route,
   Search,
   Ship,
+  Siren,
   Truck,
   Warehouse,
   X,
@@ -48,21 +49,14 @@ import { displayNetwork, displayPlan } from "./model/display-network";
 import { simulateOutlook } from "./model/simulation";
 import { formatNumber, statusMeta } from "@/lib/presentation";
 import { StatusBadge } from "./status-badge";
-import { TransportTimeline } from "./transport-timeline";
-import {
-  ForecastControls,
-  OutlookChart,
-  PlaybookReserves,
-  PlaybookTable,
-} from "./forecast-workspace";
+import { TransportTimeline, type StripSize } from "./transport-timeline";
+import { ForecastControls, OutlookChart } from "./forecast-workspace";
 import type { MapView } from "./map/network-map";
 import { api, usd } from "@/lib/api";
 import { ItineraryPanel } from "./itinerary-panel";
-import { RiskPanel } from "./risk-panel";
 import { ImpactPanel } from "./impact-panel";
-import { IncidentCard, NewsTrigger } from "./breaking-news";
 import { DemoGuide, type DemoStep } from "./demo-guide";
-import type { BreakingNews } from "@/lib/types";
+import type { BreakingNews, NewsTemplate } from "@/lib/types";
 
 const NetworkMap = dynamic(() => import("./map/network-map"), {
   ssr: false,
@@ -80,20 +74,17 @@ const NetworkMap = dynamic(() => import("./map/network-map"), {
 const views: { id: MapView; label: string; title: string; icon: typeof MapPinned }[] = [
   { id: "tower", label: "Tower", title: "Control tower", icon: MapPinned },
   { id: "itinerary", label: "Route A→B", title: "Itinerary planner", icon: Navigation },
-  { id: "alerts", label: "Alerts", title: "Alerts and AI analysis", icon: BrainCircuit },
   { id: "forecast", label: "Forecast", title: "Risk forecast", icon: ChartNoAxesCombined },
-  { id: "playbook", label: "Playbook", title: "Fallback playbook", icon: ClipboardList },
   { id: "savings", label: "Savings", title: "Savings vs no fallback", icon: ReceiptText },
-  { id: "corridors", label: "Corridors", title: "Corridor access", icon: Route },
 ];
 // Views rendered as a sheet over the map (the map stays mounted underneath).
-const sheetViews: MapView[] = ["itinerary", "alerts", "savings"];
+const sheetViews: MapView[] = ["itinerary", "savings"];
 const subscribeMotion = (callback: () => void) => {
   const query = window.matchMedia("(prefers-reduced-motion: reduce)");
   query.addEventListener("change", callback);
   return () => query.removeEventListener("change", callback);
 };
-// Deep links: /?view=forecast or /#forecast opens that view. Read as an
+// Deep links: /?view=savings or /#savings opens that view. Read as an
 // external store so the server renders the default and the client corrects it
 // after hydration without a mismatch.
 const subscribeUrl = (callback: () => void) => {
@@ -106,6 +97,11 @@ const subscribeUrl = (callback: () => void) => {
 };
 const subscribeNarrow = (callback: () => void) => {
   const query = window.matchMedia("(max-width: 760px)");
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+};
+const subscribeShort = (callback: () => void) => {
+  const query = window.matchMedia("(max-height: 820px)");
   query.addEventListener("change", callback);
   return () => query.removeEventListener("change", callback);
 };
@@ -169,6 +165,15 @@ export function Dashboard({
   );
   const [inspectorChoice, setInspectorOpen] = useState<boolean | null>(null);
   const inspectorOpen = inspectorChoice ?? !narrow;
+  const [sideOpen, setSideOpen] = useState(true);
+  // The transport strip starts collapsed on short screens (laptops, projectors) so the map keeps its height.
+  const short = useSyncExternalStore(
+    subscribeShort,
+    () => window.matchMedia("(max-height: 820px)").matches,
+    () => false,
+  );
+  const [stripChoice, setStrip] = useState<StripSize | null>(null);
+  const strip: StripSize = stripChoice ?? (short ? "collapsed" : "normal");
   const [hoverRoad, setHoverRoad] = useState<string | null>(null);
   const [events, setEvents] = useState([
     {
@@ -264,43 +269,58 @@ export function Dashboard({
     [plan.closedRoads, pending, network.corridors, applyPlan],
   );
 
-  // ---- Breaking news: publish a simulated alert, show endangered roads, apply the scenario ----
-  const [incident, setIncident] = useState<BreakingNews | null>(null);
-  const [incidentPending, setIncidentPending] = useState(false);
-  const [incidentApplied, setIncidentApplied] = useState(false);
-  async function triggerNews(templateId: string) {
-      setIncidentPending(true);
-      setIncident(null);
-      setIncidentApplied(false);
-      setError(null);
-      selectView("tower");
-      try {
-        const brief = await api<BreakingNews>("alerts/simulate", { body: { templateId, closedRoads: plan.closedRoads } });
-        setIncident(brief);
+  // ---- Alert drill: a simulated news alert shows for 2 s, then the roads it predicts close and the network re-plans ----
+  const [templates, setTemplates] = useState<NewsTemplate[]>([]);
+  const [alertIndex, setAlertIndex] = useState(0);
+  const [alertPending, setAlertPending] = useState(false);
+  const [toast, setToast] = useState<{ key: number; title: string; roads: string[] } | null>(null);
+  const [endangered, setEndangered] = useState<{ id: string; probability: number }[] | null>(null);
+  useEffect(() => {
+    api<NewsTemplate[]>("alerts/templates").then(setTemplates).catch(() => setTemplates([]));
+  }, []);
+  async function triggerAlert() {
+    if (alertPending || pending) return;
+    setAlertPending(true);
+    setError(null);
+    selectView("tower");
+    const template = templates.length ? templates[alertIndex % templates.length] : undefined;
+    try {
+      const brief = await api<BreakingNews>("alerts/simulate", {
+        body: { templateId: template?.id, closedRoads: plan.closedRoads },
+      });
+      setAlertIndex((i) => i + 1);
+      const closes = brief.ifItHappens.closes.filter((id) => !plan.closedRoads.includes(id));
+      const roadName = (id: string) => sourceNetwork.corridors.find((c) => c.id === id)?.name ?? id;
+      setToast({ key: Date.now(), title: brief.alert.title, roads: closes.map(roadName) });
+      setEndangered(
+        brief.endangeredRoads
+          .filter((e) => closes.includes(e.corridorId))
+          .map((e) => ({ id: e.corridorId, probability: e.pClosed })),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setToast(null);
+      setEndangered(null);
+      if (!closes.length) {
         setEvents((previous) =>
-          [{ id: Date.now(), title: `Breaking: ${brief.alert.title}`, detail: `${brief.endangeredRoads.length} roads at risk, ${brief.suggestions.length} deliveries affected`, time: clockLabel() }, ...previous].slice(0, 8),
+          [{ id: Date.now(), title: `Alert: ${brief.alert.title}`, detail: "No new road closures", time: clockLabel() }, ...previous].slice(0, 8),
         );
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Unable to analyse the news alert.");
-      } finally {
-        setIncidentPending(false);
+        return;
       }
-  }
-  async function applyIncident() {
-    if (!incident) return;
-    const closures = [...new Set([...plan.closedRoads, ...incident.ifItHappens.closes])];
-    await applyPlan(closures, "custom", "Breaking-news scenario applied");
-    setIncidentApplied(true);
-    const focus = incident.suggestions.find((sg) => sg.action !== "airlift") ?? incident.suggestions[0];
-    if (focus) {
-      setSelectedId(focus.destination);
-      setInspectorOpen(true);
+      await applyPlan([...plan.closedRoads, ...closes], "custom", `Alert: ${brief.alert.title}`);
+      const focus = brief.suggestions.find((sg) => sg.action !== "airlift") ?? brief.suggestions[0];
+      if (focus) setSelectedId(focus.destination);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to simulate the alert.");
+    } finally {
+      setAlertPending(false);
     }
   }
-  const endangered = useMemo(
-    () => (incident && !incidentApplied ? incident.endangeredRoads.map((e) => ({ id: e.corridorId, probability: e.pClosed })) : null),
-    [incident, incidentApplied],
-  );
+  async function resetNetwork(title = "All corridors reopened") {
+    setToast(null);
+    setEndangered(null);
+    setAlertIndex(0);
+    await Promise.allSettled([api("demo/reset", { body: {} }), applyPlan([], "open", title)]);
+  }
 
   // ---- Demo guide: scripted one-click steps for presenting ----
   const urlDemo = useSyncExternalStore(subscribeUrl, readUrlDemo, () => false);
@@ -309,54 +329,45 @@ export function Dashboard({
   const [demoStep, setDemoStep] = useState(0);
   const [demoBusy, setDemoBusy] = useState(false);
   const [itineraryRun, setItineraryRun] = useState(0);
-  const [alertsRun, setAlertsRun] = useState(0);
   const [demoFocus, setDemoFocus] = useState<string | undefined>(undefined);
   async function resetDemo() {
-    setIncident(null);
-    setIncidentApplied(false);
     setForecast(null);
     setDemoStep(0);
     selectView("tower");
-    await Promise.allSettled([api("demo/reset", { body: {} }), applyPlan([], "open", "Demo reset: all corridors open")]);
+    await resetNetwork("Demo reset: all corridors open");
   }
   const demoSteps: DemoStep[] = [
     { id: "network", title: "One network, real roads", action: "Show the network",
       say: "Five client warehouses and twelve communities in South Sudan, on OpenStreetMap roads and Nile barge legs. Every delivery has a planned route; trucks and barges move along it." },
-    { id: "news", title: "Breaking news arrives", action: "Publish the news alert",
-      say: "A newswire alert: floods on the Juba–Bor road and attacks on Nile barges. The analyst maps the text to exact roads, and 2,000 correlated futures give each road its chance of closing." },
-    { id: "apply", title: "Act before it happens", action: "Apply & re-plan",
-      say: "Juba can no longer reach Bor: the network has split. ViaMensa switches Bor to Malakal, a supplier that has never served it, over a Nile leg the plan never used. Pibor and Akobo need air. Watch the vehicles take their new routes." },
+    { id: "alert", title: "An alert comes in", action: "Simulate the alert",
+      say: "A newswire alert: floods on the Juba–Bor road and attacks on Nile barges. The analyst maps the text to exact roads and predicts which will close. The roads close and every delivery is re-planned: Bor switches to Malakal, a supplier that has never served it, over a Nile leg the plan never used. Pibor and Akobo need air." },
     { id: "options", title: "Compare every option", action: "Open Bor's options",
       say: "For any delivery: the planned route, the detours, every supplier switch and air, ranked by cost per tonne and time." },
-    { id: "prepare", title: "Prepare for what's next", action: "Simulate all alerts",
-      say: "All alerts analysed together. Correlated disruptions over thousands of futures give each delivery its odds, a robust Plan B and a playbook per issue." },
+    { id: "forecast", title: "Prepare for what's next", action: "Run the forecast",
+      say: "Correlated disruptions over 2,000 futures: each road's chance of closing and each delivery's outlook, on top of today's closures." },
     { id: "value", title: "What the fallback is worth", action: "Show the savings",
       say: "Against an emergency airlift at WFP's published $2,700 per tonne, or waiting for the road to reopen. Every rate has a source." },
   ];
   async function runDemoStep(index: number) {
-      setDemoBusy(true);
-      try {
-        const id = ["network", "news", "apply", "options", "prepare", "value"][index];
-        if (id === "network") await resetDemo();
-        if (id === "news") await triggerNews("jonglei-crisis");
-        if (id === "apply") {
-          if (!incident) await triggerNews("jonglei-crisis");
-          else await applyIncident();
-        }
-        if (id === "options") {
-          setDemoFocus("bor");
-          selectView("itinerary");
-          setItineraryRun((n) => n + 1);
-        }
-        if (id === "prepare") {
-          selectView("alerts");
-          setAlertsRun((n) => n + 1);
-        }
-        if (id === "value") selectView("savings");
-        setDemoStep(Math.min(index + 1, 5));
-      } finally {
-        setDemoBusy(false);
+    setDemoBusy(true);
+    try {
+      const id = demoSteps[index].id;
+      if (id === "network") await resetDemo();
+      if (id === "alert") await triggerAlert();
+      if (id === "options") {
+        setDemoFocus("bor");
+        selectView("itinerary");
+        setItineraryRun((n) => n + 1);
       }
+      if (id === "forecast") {
+        selectView("forecast");
+        await runForecast();
+      }
+      if (id === "value") selectView("savings");
+      setDemoStep(Math.min(index + 1, demoSteps.length - 1));
+    } finally {
+      setDemoBusy(false);
+    }
   }
   // Keyboard shortcuts read the latest handlers through a ref, so the listener is attached once.
   const onKeyRef = useRef<(event: KeyboardEvent) => void>(() => {});
@@ -366,7 +377,7 @@ export function Dashboard({
       if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || event.metaKey || event.ctrlKey || event.altKey) return;
       const key = event.key.toLowerCase();
       if (key === "d") setDemoOpen(!demoOpen);
-      else if (key === "n" && !incidentPending) void triggerNews("jonglei-crisis");
+      else if (key === "n") void triggerAlert();
       else if (key === "r" && !demoBusy) void resetDemo();
       else if (demoOpen && event.key === "ArrowRight" && !demoBusy) void runDemoStep(demoStep);
       else if (demoOpen && event.key === "ArrowLeft") setDemoStep((i) => Math.max(0, i - 1));
@@ -461,7 +472,7 @@ export function Dashboard({
 
   return (
     <div
-      className={`app-shell view-${view} ${pending || forecastPending ? "busy" : ""} ${demoOpen ? "demo-on" : ""}`}
+      className={`app-shell view-${view} strip-${strip} ${sideOpen ? "" : "side-closed"} ${pending || forecastPending ? "busy" : ""}`}
     >
       <a className="skip-link" href="#main">
         Skip to content
@@ -529,6 +540,16 @@ export function Dashboard({
       </nav>
 
       <header className="app-header">
+        <button
+          className="icon-button side-toggle"
+          aria-label={sideOpen ? "Hide side panel" : "Show side panel"}
+          aria-expanded={sideOpen}
+          aria-controls="side-panel"
+          title={sideOpen ? "Hide side panel" : "Show side panel"}
+          onClick={() => setSideOpen(!sideOpen)}
+        >
+          {sideOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+        </button>
         <div className="wordmark">
           <strong>ViaMensa</strong>
           <span>{current.title}, South Sudan</span>
@@ -562,13 +583,12 @@ export function Dashboard({
           <button
             className="button"
             disabled={pending || !plan.closedRoads.length}
-            onClick={() => void applyPlan([], "open", "All corridors reopened")}
+            onClick={() => void resetNetwork()}
           >
             <RotateCcw size={13} />
             Reset
           </button>
         </div>
-        <NewsTrigger pending={incidentPending} onTrigger={(id) => void triggerNews(id)} />
         <button
           className={`button demo-toggle ${demoOpen ? "active" : ""}`}
           aria-pressed={demoOpen}
@@ -630,7 +650,7 @@ export function Dashboard({
       </header>
 
       <main id="main" className="workspace">
-        <aside className="side-column" aria-label={current.title}>
+        <aside className="side-column" id="side-panel" aria-label={current.title}>
           {view === "tower" && (
             <>
               <div className="side-section grow">
@@ -742,14 +762,6 @@ export function Dashboard({
               onHoverRoad={setHoverRoad}
             />
           )}
-          {view === "playbook" && (
-            <PlaybookReserves
-              network={network}
-              forecast={forecast}
-              stale={staleForecast}
-              onRefresh={() => selectView("forecast")}
-            />
-          )}
           {sheetViews.includes(view) && (
             <div className="side-section grow">
               <div className="side-head">
@@ -758,10 +770,8 @@ export function Dashboard({
               </div>
               <p className="side-intro">
                 {view === "itinerary"
-                  ? "Itineraries are planned on the network as it is now. Close a corridor here, on the map or in the Corridors view, then re-plan."
-                  : view === "alerts"
-                    ? "Simulations run on top of these closures. Analyse the alerts, pick issues, then simulate."
-                    : "The savings table compares these closures with operating without a prepared fallback."}
+                  ? "Itineraries are planned on the network as it is now. Click a corridor on the map to close it, then re-plan."
+                  : "The savings table compares these closures with operating without a prepared fallback."}
               </p>
               <div className="corridor-list" aria-busy={pending}>
                 {plan.closedRoads.length === 0 && <p className="side-intro">All corridors are open.</p>}
@@ -775,55 +785,6 @@ export function Dashboard({
                       </div>
                       <button className="button small" disabled={pending} onClick={() => toggleRoad(id)}>
                         Reopen
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {view === "corridors" && (
-            <div className="side-section grow">
-              <div className="side-head">
-                <h2>Corridor access</h2>
-                <span>
-                  {plan.closedRoads.length} closed of {network.corridors.length}
-                </span>
-              </div>
-              <p className="side-intro">
-                Closing a corridor recalculates every delivery on the server.
-              </p>
-              <div className="corridor-list" aria-busy={pending}>
-                {network.corridors.map((road) => {
-                  const closed = plan.closedRoads.includes(road.id);
-                  return (
-                    <div
-                      className={`corridor-item ${closed ? "closed" : ""}`}
-                      key={road.id}
-                      onMouseEnter={() => setHoverRoad(road.id)}
-                      onMouseLeave={() => setHoverRoad(null)}
-                      onFocus={() => setHoverRoad(road.id)}
-                      onBlur={() => setHoverRoad(null)}
-                    >
-                      <div className="corridor-main">
-                        <strong>{road.name}</strong>
-                        <span>
-                          {road.mode === "river" ? <Ship size={12} /> : <Truck size={12} />}
-                          {road.mode === "river" ? "River barge" : "Road convoy"},{" "}
-                          {Math.round(road.distanceKm)} km, {road.hours} h
-                        </span>
-                      </div>
-                      <span className={`access-state ${closed ? "closed" : ""}`}>
-                        <i />
-                        {closed ? "Closed" : "Open"}
-                      </span>
-                      <button
-                        className="button small"
-                        disabled={pending}
-                        aria-label={`${closed ? "Reopen" : "Close"} ${road.name}`}
-                        onClick={() => toggleRoad(road.id)}
-                      >
-                        {closed ? "Reopen" : "Close"}
                       </button>
                     </div>
                   );
@@ -864,24 +825,30 @@ export function Dashboard({
               </button>
             </div>
           )}
-          {view === "tower" && incident && (
-            <IncidentCard
-              brief={incident}
-              network={sourceNetwork}
-              applied={incidentApplied}
-              pending={pending}
-              onApply={() => void applyIncident()}
-              onClose={() => setIncident(null)}
-              onFocus={(id) => {
-                setSelectedId(id);
-                setInspectorOpen(true);
-              }}
-            />
+          {view === "tower" && (
+            <button
+              className="alert-trigger"
+              disabled={alertPending || pending}
+              title="Simulate a news alert (N)"
+              onClick={() => void triggerAlert()}
+            >
+              <Siren size={15} />
+              {alertPending ? (toast ? "Alert in progress" : "Reading the alert…") : "Simulate alert"}
+            </button>
+          )}
+          {toast && (
+            <div className="alert-toast" key={toast.key} role="alert">
+              <span className="alert-toast-tag">
+                <Siren size={12} />
+                Alert · simulated newswire
+              </span>
+              <strong>{toast.title}</strong>
+              <span>{toast.roads.length ? `Closing: ${toast.roads.join(", ")}` : "No new road closures"}</span>
+            </div>
           )}
           {sheetViews.includes(view) && (
             <div className="tool-sheet">
               {view === "itinerary" && <ItineraryPanel key={demoFocus ?? "default"} network={sourceNetwork} closedRoads={plan.closedRoads} initialDestination={demoFocus} autoRunKey={itineraryRun} />}
-              {view === "alerts" && <RiskPanel network={sourceNetwork} closedRoads={plan.closedRoads} autoRunKey={alertsRun} />}
               {view === "savings" && <ImpactPanel network={sourceNetwork} closedRoads={plan.closedRoads} />}
             </div>
           )}
@@ -903,7 +870,7 @@ export function Dashboard({
             ))}
         </NetworkMap>
 
-        {view !== "corridors" && !sheetViews.includes(view) && (
+        {!sheetViews.includes(view) && (
           <section className="bottom-strip">
             {view === "tower" && (
               <TransportTimeline
@@ -920,6 +887,9 @@ export function Dashboard({
                 onPlaying={() => setPlaying(!playing)}
                 speed={speed}
                 onSpeed={setSpeed}
+                size={strip}
+                onSize={setStrip}
+                supplierName={(id) => network.nodes.find((n) => n.id === id)?.name ?? ""}
               />
             )}
             {view === "forecast" && (
@@ -931,9 +901,6 @@ export function Dashboard({
                 onRun={runForecast}
               />
             )}
-            {view === "playbook" && (
-              <PlaybookTable network={network} forecast={forecast} />
-            )}
           </section>
         )}
       </main>
@@ -942,7 +909,7 @@ export function Dashboard({
         <DemoGuide
           steps={demoSteps}
           index={demoStep}
-          busy={demoBusy || pending || incidentPending}
+          busy={demoBusy || pending || alertPending}
           onRun={(i) => void runDemoStep(i)}
           onIndex={setDemoStep}
           onReset={() => void resetDemo()}

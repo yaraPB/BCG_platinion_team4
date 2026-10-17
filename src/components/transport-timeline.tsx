@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState, type RefObject } from "react";
-import { CircleAlert, Pause, Play, RotateCcw, Ship, Truck } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleAlert, Pause, Play, RotateCcw, Ship, Truck } from "lucide-react";
 import type { Plan, SimulationClock } from "./model/types";
+
+/** Collapsed shows only the header and playback; expanded gives every delivery a readable row. */
+export type StripSize = "collapsed" | "normal" | "expanded";
 
 export function TransportTimeline({
   plan,
@@ -15,6 +18,9 @@ export function TransportTimeline({
   onPlaying,
   speed,
   onSpeed,
+  size,
+  onSize,
+  supplierName,
 }: {
   plan: Plan;
   selectedId: string;
@@ -26,6 +32,9 @@ export function TransportTimeline({
   onPlaying: () => void;
   speed: number;
   onSpeed: (speed: number) => void;
+  size: StripSize;
+  onSize: (size: StripSize) => void;
+  supplierName: (id: string) => string;
 }) {
   const [hour, setHour] = useState(3);
   const duration = Math.max(
@@ -60,9 +69,17 @@ export function TransportTimeline({
   const label = `${String(Math.floor(hour)).padStart(2, "0")}:${String(Math.floor((hour % 1) * 60)).padStart(2, "0")}`;
   const ticks = [0, duration / 4, duration / 2, duration * 0.75, duration];
   return (
-    <section className="transport-timeline" aria-label="Transport simulation">
+    <section className={`transport-timeline ${size}`} aria-label="Transport simulation">
       <div className="strip-head">
-        <h2>Transport progress</h2>
+        <h2>
+          <button
+            className="strip-title"
+            aria-expanded={size !== "collapsed"}
+            onClick={() => onSize(size === "collapsed" ? "normal" : "collapsed")}
+          >
+            Transport progress
+          </button>
+        </h2>
         <span className="strip-note">Illustrative timing, not live tracking</span>
         <div className="playback">
           <button
@@ -92,8 +109,28 @@ export function TransportTimeline({
           </button>
           <time>+{label}</time>
         </div>
+        <div className="strip-size" role="group" aria-label="Panel size">
+          <button
+            className="icon-button"
+            aria-label="Make the transport panel taller"
+            title={size === "collapsed" ? "Show" : "Expand"}
+            disabled={size === "expanded"}
+            onClick={() => onSize(size === "collapsed" ? "normal" : "expanded")}
+          >
+            <ChevronUp size={15} />
+          </button>
+          <button
+            className="icon-button"
+            aria-label="Make the transport panel shorter"
+            title={size === "expanded" ? "Shrink" : "Collapse"}
+            disabled={size === "collapsed"}
+            onClick={() => onSize(size === "expanded" ? "normal" : "collapsed")}
+          >
+            <ChevronDown size={15} />
+          </button>
+        </div>
       </div>
-      <div className="timeline-body">
+      {size !== "collapsed" && <div className="timeline-body">
         <div className="timeline-axis" aria-hidden="true">
           <span className="timeline-corner">Dispatch order</span>
           <div>
@@ -126,7 +163,7 @@ export function TransportTimeline({
               >
                 <span className="timeline-name">
                   {river ? <Ship size={12} /> : <Truck size={12} />}
-                  {d.name}
+                  {size === "expanded" && d.supplierId ? `${supplierName(d.supplierId)} → ${d.name}` : d.name}
                 </span>
                 <span className="timeline-track">
                   {d.hours !== null ? (
@@ -192,7 +229,7 @@ export function TransportTimeline({
             }}
           />
         </label>
-      </div>
+      </div>}
     </section>
   );
 }

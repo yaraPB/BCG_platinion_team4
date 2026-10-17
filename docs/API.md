@@ -37,7 +37,7 @@ The plan endpoint keeps the web types' shape: `status` is `unreachable` when onl
 | DELETE | `/v1/alerts/{id}` | Remove an alert |
 | POST | `/v1/alerts/analyze` | `{alertIds?, horizonDays?, useLlm?}` → ranked issues mapped to corridor/node IDs |
 | GET | `/v1/analyses/latest`, `/v1/analyses/{id}` | Stored analyses |
-| GET | `/v1/alerts/templates` | Breaking-news templates for demos and drills |
+| GET | `/v1/alerts/templates` | News alert templates for demos and drills |
 | POST | `/v1/alerts/simulate` | `{templateId?, closedRoads?, useLlm?}` → publishes a simulated alert, analyses it and returns an incident brief |
 | POST | `/v1/demo/reset` | Deletes the simulated alerts |
 

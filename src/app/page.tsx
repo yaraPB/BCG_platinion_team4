@@ -5,8 +5,8 @@ const features = [
   { icon: Map, title: "Your network on the real map", text: "Your suppliers and delivery points connected by OpenStreetMap roads and river legs, with distances measured along the actual route." },
   { icon: Shuffle, title: "Re-plan the moment a road is cut", text: "Close any corridor and every delivery is recalculated: a detour from the same supplier, or the cheapest other supplier that can still reach the community." },
   { icon: GitFork, title: "Knows when the network splits", text: "When a closure cuts the network in two, ViaMensa searches only the side the community is on, then falls back to river or air if no supplier is left there." },
-  { icon: BrainCircuit, title: "News-informed risk", text: "Paste alerts or news. An AI analyst ranks the issues likely to disrupt your corridors and maps each one to the exact roads it affects." },
-  { icon: Route, title: "Plan B before it happens", text: "Thousands of simulated futures with correlated disruptions give each delivery a fallback, a robust alternative route and a per-issue playbook." },
+  { icon: BrainCircuit, title: "News-informed risk", text: "When a news alert comes in, an AI analyst maps it to the exact roads it affects and predicts which will close. The network re-plans around them." },
+  { icon: Route, title: "Plan B before it happens", text: "Thousands of simulated futures with correlated disruptions give each road its chance of closing and each delivery its outlook, before the cut happens." },
   { icon: ReceiptText, title: "Savings you can audit", text: "Every cost uses a published unit rate with its source, so each saving can be traced back to the figure it came from." },
 ];
 
@@ -34,7 +34,7 @@ export default function Home() {
           <li><strong>Configure.</strong> Your suppliers, delivery points and caseloads are loaded into your private workspace.</li>
           <li><strong>Plan.</strong> Pick a supplier and a community to get the cheapest itinerary, with cost and travel time for every leg.</li>
           <li><strong>Cut.</strong> Close roads by hand or apply a scenario. ViaMensa re-plans with bidirectional A* for the route and a single reverse search to price every other supplier.</li>
-          <li><strong>Anticipate.</strong> Analyse the latest alerts, then simulate the ranked issues together to get fallbacks ready before they are needed.</li>
+          <li><strong>Anticipate.</strong> A news alert closes the roads it predicts and the network re-plans; the forecast simulates correlated disruptions so fallbacks are ready before they are needed.</li>
           <li><strong>Prove it.</strong> Savings tables compare the fallback with an emergency airlift or with waiting for the road to reopen.</li>
         </ol>
       </section>

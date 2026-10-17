@@ -20,7 +20,7 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · API: [docs/API.md](docs
 
 The workspace (`/app`) is a night-operations control room: the map is the hero and quiet glass panels sit around it. MapLibre renders South Sudan on a dark hillshaded basemap derived from the cached OpenFreeMap style, with the API's OpenStreetMap road and river paths, hatched hazard footprints and animated trucks and barges. Colour carries meaning only (route green, river blue, new-supplier amber, unreachable coral), and every status also has an icon and a label.
 
-Views are deep-linkable: `/app#itinerary`, `/app#alerts`, `/app#forecast`, `/app#playbook`, `/app#savings`, `/app#corridors` (or `/app?view=forecast` for links that must survive redirects).
+Views are deep-linkable: `/app#itinerary`, `/app#forecast`, `/app#savings` (or `/app?view=forecast` for links that must survive redirects).
 
 **Hydration warning in development?** If the console diff shows attributes such as `bis_skin_checked`, `bis_register` or `__processed_…`, a browser extension (Bitdefender's web protection injects these) is rewriting the page before React hydrates. Open the app in an incognito window or exclude `localhost` in the extension. For the smoothest experience, test a production build (`npm run build && npm start`).
 
@@ -43,7 +43,7 @@ npm ci && VIAMENSA_API_URL=http://localhost:8000 npm run dev
 
 Sign in with `demo@viamensa.app` / `winners` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
 Set `ANTHROPIC_API_KEY` for LLM alert analysis; without it the API uses the rule-based analyser.
-For a live demo, press `D` in the workspace (or open `/app?demo=1`) for the presenter guide; `N` triggers a breaking-news alert and `R` resets.
+For a live demo, press `D` in the workspace (or open `/app?demo=1`) for the presenter guide; `N` (or Simulate alert on the map) plays a news alert and `R` resets.
 
 ## Deploy to Azure
 

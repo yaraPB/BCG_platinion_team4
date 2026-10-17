@@ -45,7 +45,7 @@ import {
 } from "./geometry";
 import { SchematicMap } from "./schematic-map";
 
-export type MapView = "tower" | "itinerary" | "alerts" | "forecast" | "playbook" | "savings" | "corridors";
+export type MapView = "tower" | "itinerary" | "forecast" | "savings";
 
 interface Props {
   network: Network;
@@ -149,8 +149,8 @@ export default function NetworkMap({
   // toggle a class instead of rebuilding every marker.
   const markerEls = useRef(new Map<string, HTMLElement>());
   const selectedRef = useRef(selectedId);
-  const risksVisible = risks || view === "forecast" || view === "playbook";
-  const riskLayer = (view === "forecast" || view === "playbook") && !!roadRisk;
+  const risksVisible = risks || view === "forecast";
+  const riskLayer = view === "forecast" && !!roadRisk;
   // Leave room for the overlays: the journey inspector on wide screens sits on
   // the right; on narrow screens the overlays stack at the edges instead.
   const framePadding = (forView: MapView = view) => {
@@ -559,6 +559,14 @@ export default function NetworkMap({
       collection(items.map(({ e, road }) => line(road.coordinates, { id: e.id, risk: Math.max(0.35, e.probability) }))),
     );
     if (!items.length) return;
+    const points = items.flatMap(({ road }) => road.coordinates);
+    map.fitBounds(
+      [
+        [Math.min(...points.map((p) => p[0])), Math.min(...points.map((p) => p[1]))],
+        [Math.max(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1]))],
+      ],
+      { padding: framePadding(), maxZoom: 7.4, duration: reducedMotion ? 0 : 700 },
+    );
     let cancelled = false,
       frame = 0;
     const badges: Marker[] = [];
@@ -584,6 +592,8 @@ export default function NetworkMap({
       cancelAnimationFrame(frame);
       badges.forEach((b) => b.remove());
     };
+    // Framing reads the current layout; re-run only when the endangered roads change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, network, endangered, reducedMotion]);
 
   // Route-change transition: when the plan changes, every delivery whose route changed shows its old route fading
@@ -691,7 +701,7 @@ export default function NetworkMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, plan]);
 
-  // Hover highlight from the corridor and exposure lists.
+  // Hover highlight from the forecast's corridor exposure list.
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
@@ -1034,7 +1044,7 @@ export default function NetworkMap({
           <button
             aria-pressed={risksVisible}
             onClick={() => setRisks(!risks)}
-            disabled={failed || view === "forecast" || view === "playbook"}
+            disabled={failed || view === "forecast"}
           >
             <Waves size={13} />
             Risk areas

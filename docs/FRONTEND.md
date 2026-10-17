@@ -26,22 +26,22 @@ A night-operations control room, in the spirit of crisis and logistics dashboard
 The desktop layout is a fixed-viewport grid that does not scroll:
 
 1. **Event ticker** (top). The latest operations event with a clock, plus a history popover of the session's events.
-2. **Navigation rail** (left). Icon and label for the seven views: Tower, Route A→B, Alerts, Forecast, Playbook, Savings and Corridors. Views are deep-linkable with `/app#forecast` and similar.
-3. **Header.** Wordmark, scenario selector with reset, live readouts (people connected, food allocated, deliveries on plan, deliveries needing attention), CSV export.
-4. **Side column.** Changes with the view: the dispatch list and suppliers; the current closures (Route A→B, Alerts, Savings); risk assumptions, outlook and corridor exposure; reserves to hold per supplier; or the corridor access list.
+2. **Navigation rail** (left). Icon and label for the four views: Tower, Route A→B, Forecast and Savings. Views are deep-linkable with `/app#forecast` and similar.
+3. **Header.** Side-panel toggle, wordmark, scenario selector with reset, live readouts (people connected, food allocated, deliveries on plan, deliveries needing attention), CSV export.
+4. **Side panel.** Opens and closes from the header on every view; when closed, the map takes the full width. It changes with the view: the dispatch list and suppliers (Tower); the current closures (Route A→B, Savings); or risk assumptions, outlook and corridor exposure (Forecast).
 5. **Map.** Always visible. Overlays: tools (fit, zoom, 3D terrain), the layer legend with toggles, the selected-delivery card, a corridor popover and, in the tower view, the journey inspector.
-6. **Bottom strip.** Transport playback in the tower view, the delivery outlook chart in the forecast view and the fallback table in the playbook view. Hidden in the corridors view.
-7. **Sheets.** Route A→B (itinerary planner), Alerts (news analysis → simulation → playbook) and Savings open as a scrollable sheet over the map; the map stays mounted underneath.
+6. **Bottom strip.** Transport progress in the tower view, with three sizes from its header (or by clicking its title): collapsed (playback controls only, the map gets the height), normal, and expanded (one readable row per delivery, labelled supplier → community). It starts collapsed on screens under 820 px high. The forecast view shows the delivery outlook chart.
+7. **Sheets.** Route A→B (itinerary planner) and Savings open as a scrollable sheet over the map; the map stays mounted underneath.
 
 Below 1100px the shell becomes a scrolling page: ticker, horizontal view bar, header with wrapped readouts, the map at 62% of the viewport height, then the side-column content and the bottom strip.
 
-## Breaking news and demo mode
+## Alert drill and demo mode
 
-**Breaking news** (header) publishes a simulated alert from a template (`POST /v1/alerts/simulate`). The incident card on the map shows the alert, which analyst ran (Claude or rules), the endangered roads with their closure probability (also drawn on the map with a pulsing risk colour and % badges), and one suggestion per affected delivery. Suggestions lead with suppliers that have never served that community and flag legs no current delivery travels. **Apply scenario & re-plan** closes the roads the alert would most likely close and re-plans. The card then collapses to a summary so the map stays visible.
+**Simulate alert** (top left of the Tower map, or `N`) publishes a simulated news alert (`POST /v1/alerts/simulate`, labelled "Simulated newswire"). The analyst (Claude or rules) maps it to roads and predicts which will close. A small red alert names the roads it is closing, while the map frames them with a pulsing glow and their closure probability. After 2 seconds the alert fades, those roads close and every delivery is re-planned. Each press plays the next template: floods and barge attacks around Bor, checkpoints on Rumbek–Leer, then clashes around Nasir. Reset reopens everything and starts again from the first.
 
-**Re-plan animation.** When a plan changes, the map frames the changed deliveries (avoiding the incident card and the demo guide) and dims the old route to a dashed ghost. A vehicle then draws each new route from its supplier, labelled with the decision: "Bor · new supplier Malakal", "rerouted by river" or "airlift from Juba" (a plane on an arc). Deliveries are staggered, then the overlay clears.
+**Re-plan animation.** When a plan changes, the map frames the changed deliveries (avoiding the demo guide) and dims the old route to a dashed ghost. A vehicle then draws each new route from its supplier, labelled with the decision: "Bor · new supplier Malakal", "rerouted by river" or "airlift from Juba" (a plane on an arc). Deliveries are staggered, then the overlay clears.
 
-**Demo mode** (`D`, the Demo button, or `/app?demo=1`) opens a presenter guide with six steps: the network, breaking news, apply and re-plan, compare options for Bor, simulate all alerts, and savings. Each step has a line to say and a button that performs it. Keys: `→` run the step and advance, `←` back, `N` breaking news, `R` reset (removes simulated alerts and reopens every corridor), `D` hide. On short screens (below 820 px high), the tower view hides the transport strip while the guide is open, so the map keeps its height. The sign-in page offers **Use demo account** when the server sets `VIAMENSA_DEMO_PASSWORD`; set `showDemoLogin=false` in the Bicep parameters to remove it.
+**Demo mode** (`D`, the Demo button, or `/app?demo=1`) opens a presenter guide with five steps: the network, the alert, Bor's options, the forecast, and savings. Each step has a line to say and a button that performs it. Keys: `→` run the step and advance, `←` back, `N` simulate an alert, `R` reset (removes simulated alerts and reopens every corridor), `D` hide. The sign-in page offers **Use demo account** when the server sets `VIAMENSA_DEMO_PASSWORD`; set `showDemoLogin=false` in the Bicep parameters to remove it.
 
 ## Map controls
 
@@ -50,10 +50,10 @@ Below 1100px the shell becomes a scrolling page: ticker, horizontal view bar, he
 | Select a delivery, community or vehicle | Highlights its geographic route with a glow and updates the journey inspector. |
 | Selected-delivery card | Fits the map to that journey. |
 | Click a corridor or closure marker | Opens a popover with a closure/reopen action. |
-| Hover a corridor in the Corridors or exposure lists | Highlights that corridor on the map. |
+| Hover a corridor in the forecast exposure list | Highlights that corridor on the map. |
 | Fit | Restores the regional overview and flat view. |
 | Routes | Shows or hides the background corridor layer. The selected route stays visible. |
-| Risk areas | Shows hatched hazard footprints scaled by the assumed probability. Always on in the Forecast and Playbook views, where corridors are also coloured by closure probability with a scale in the legend. |
+| Risk areas | Shows hatched hazard footprints scaled by the assumed probability. Always on in the Forecast view, where corridors are also coloured by closure probability with a scale in the legend. |
 | 3D terrain | Loads terrain elevation and tilts the map; toggling restores the flat view. |
 | Playback | Pauses, restarts, changes speed or scrubs the shared simulation clock. |
 
@@ -68,10 +68,10 @@ Trucks and barges follow the cached path in each delivery leg. Animation is time
 - `map/geometry.ts`: distance-weighted path interpolation, bearings, hazard circles, the hatch tile generator and vehicle icons.
 - `map/schematic-map.tsx`: geographic SVG fallback if MapLibre initialization fails.
 - `transport-timeline.tsx`: playback controls, time scrubber and per-delivery leg tracks.
-- `model/simulation.ts`: sends the forecast assumptions to `POST /v1/simulations` (correlated server model) and maps the response to the forecast and playbook views.
-- `itinerary-panel.tsx`, `risk-panel.tsx`, `impact-panel.tsx`: the Route A→B, Alerts and Savings sheets.
-- `breaking-news.tsx`: the Breaking news menu and the incident card. `demo-guide.tsx`: the presenter guide.
-- `forecast-workspace.tsx`: `ForecastControls` (assumptions, outlook, corridor exposure), `OutlookChart` (stacked outcome bars), `PlaybookReserves` and `PlaybookTable`.
+- `model/simulation.ts`: sends the forecast assumptions to `POST /v1/simulations` (correlated server model) and maps the response to the forecast view.
+- `itinerary-panel.tsx`, `impact-panel.tsx`: the Route A→B and Savings sheets.
+- `demo-guide.tsx`: the presenter guide.
+- `forecast-workspace.tsx`: `ForecastControls` (assumptions, outlook, corridor exposure), `OutlookChart` (stacked outcome bars).
 - `lib/presentation.ts`: the shared palette, status metadata and number formatting used by both CSS-free map code and React components.
 
 ## Geographic sources
@@ -90,9 +90,9 @@ Unit costs are published rates and speeds are labelled estimates (`GET /v1/assum
 
 ## Forecast interpretation
 
-The sliders are the planner's 72-hour probabilities for three scenario areas; shorter horizons scale survival by the horizon ratio. The server runs the correlated disruption model: areas can co-occur, corridors inside an area fail together, and consequences depend on the hazard and the road surface. Every future is re-planned (reroute, supplier switch or airlift), and identical futures are solved once. Explicitly closed corridors stay closed. For issues extracted from news and field reports, use **Alerts**.
+The sliders are the planner's 72-hour probabilities for three scenario areas; shorter horizons scale survival by the horizon ratio. The server runs the correlated disruption model: areas can co-occur, corridors inside an area fail together, and consequences depend on the hazard and the road surface. Every future is re-planned (reroute, supplier switch or airlift), and identical futures are solved once. Explicitly closed corridors stay closed. For a news alert, use **Simulate alert** in the Tower view.
 
-The playbook reports the most frequent contingency per community, the corridor that most often triggered it, and the 90th percentile of fallback demand per supplier. These are planning figures; they do not place orders.
+The simulation API also returns a playbook (the most frequent contingency per community, its trigger corridor, and the 90th percentile of fallback demand per supplier); the workspace does not display it.
 
 ## Verification
 
@@ -101,4 +101,4 @@ npm run check
 npm run build
 ```
 
-For visual checks: select a delivery, close a corridor, inspect the changed path and the dashed planned route, pause and scrub transport, toggle risk and terrain layers, run the forecast and watch corridors recolour, open the playbook, and inspect the layout below 1100px. The corridor list provides keyboard-accessible closure actions alongside the map.
+For visual checks: select a delivery, close a corridor, inspect the changed path and the dashed planned route, pause and scrub transport, toggle risk and terrain layers, run the forecast and watch corridors recolour, simulate an alert, collapse and expand the side panel and the transport strip, and inspect the layout below 1100px.
