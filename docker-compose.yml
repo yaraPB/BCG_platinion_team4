@@ -18,7 +18,7 @@ services:
       VIAMENSA_DATABASE_URL: postgresql+psycopg://viamensa:viamensa@db:5432/viamensa
       VIAMENSA_JWT_SECRET: ${VIAMENSA_JWT_SECRET:-local-compose-secret-change-me-0123456789}
       VIAMENSA_CORS_ORIGINS: '["http://localhost:3000"]'
-      VIAMENSA_DEMO_USER_PASSWORD: ${VIAMENSA_DEMO_USER_PASSWORD:-viamensa-demo}
+      VIAMENSA_DEMO_USER_PASSWORD: ${VIAMENSA_DEMO_USER_PASSWORD:-winners}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       db: {condition: service_healthy}

@@ -110,3 +110,24 @@ def test_tenant_isolation(client, auth):
     tok = client.post("/v1/auth/token", json={"email": "other@example.com", "password": "pw-other-1"}).json()["accessToken"]
     r = client.get("/v1/network", headers={"Authorization": f"Bearer {tok}"})
     assert r.status_code == 404  # no network configured for that client
+
+
+def test_demo_password_follows_configuration(client):
+    """Changing VIAMENSA_DEMO_USER_PASSWORD rotates the existing demo user's password on the next startup."""
+    from app.core.config import get_settings
+    from app.db.bootstrap import seed_demo
+    from app.db.session import get_sessionmaker
+
+    settings = get_settings()
+    original = settings.demo_user_password
+    try:
+        settings.demo_user_password = type(original)("rotated-pass-1")
+        with get_sessionmaker()() as db:
+            seed_demo(db)
+        assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "rotated-pass-1"}).status_code == 200
+        assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "winners"}).status_code == 401
+    finally:
+        settings.demo_user_password = original
+        with get_sessionmaker()() as db:
+            seed_demo(db)
+    assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "winners"}).status_code == 200

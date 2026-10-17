@@ -14,7 +14,15 @@ ViaMensa plans food deliveries from a client's suppliers to the communities it s
 | Network | Real South Sudan towns, OpenStreetMap road geometry (OSRM) and Nile/Sobat river legs (Overpass), built by a script and committed. | `backend/scripts/build_network.py` |
 | Infra | Docker images, Azure Container Apps + PostgreSQL + Key Vault + ACR + Log Analytics/App Insights (Bicep), GitHub Actions CI/CD. | `infra/`, `.github/` |
 
-Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · API: [docs/API.md](docs/API.md) (live OpenAPI at `/docs` on the API).
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · API: [docs/API.md](docs/API.md) (live OpenAPI at `/docs` on the API) · Frontend design: [docs/FRONTEND.md](docs/FRONTEND.md).
+
+## Frontend
+
+The workspace (`/app`) is a night-operations control room: the map is the hero and quiet glass panels sit around it. MapLibre renders South Sudan on a dark hillshaded basemap derived from the cached OpenFreeMap style, with the API's OpenStreetMap road and river paths, hatched hazard footprints and animated trucks and barges. Colour carries meaning only (route green, river blue, new-supplier amber, unreachable coral), and every status also has an icon and a label.
+
+Views are deep-linkable: `/app#itinerary`, `/app#alerts`, `/app#forecast`, `/app#playbook`, `/app#savings`, `/app#corridors` (or `/app?view=forecast` for links that must survive redirects).
+
+**Hydration warning in development?** If the console diff shows attributes such as `bis_skin_checked`, `bis_register` or `__processed_…`, a browser extension (Bitdefender's web protection injects these) is rewriting the page before React hydrates. Open the app in an incognito window or exclude `localhost` in the extension. For the smoothest experience, test a production build (`npm run build && npm start`).
 
 ## Run locally
 
@@ -33,7 +41,7 @@ cd backend && uv sync && uv run uvicorn app.main:app --port 8000
 npm ci && VIAMENSA_API_URL=http://localhost:8000 npm run dev
 ```
 
-Sign in with `demo@viamensa.app` / `viamensa-demo` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
+Sign in with `demo@viamensa.app` / `winners` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
 Set `ANTHROPIC_API_KEY` for LLM alert analysis; without it the API uses the rule-based analyser.
 
 ## Deploy to Azure

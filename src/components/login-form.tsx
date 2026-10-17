@@ -31,6 +31,6 @@ export function LoginForm() {
     <label>Email<input name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
     <label>Password<input name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
     {error && <p className="error-banner" role="alert">{error}</p>}
-    <button className="button button-primary" type="submit" disabled={pending}><LogIn size={14} />{pending ? "Signing in…" : "Sign in"}</button>
+    <button className="button primary" type="submit" disabled={pending}><LogIn size={14} />{pending ? "Signing in…" : "Sign in"}</button>
   </form>;
 }

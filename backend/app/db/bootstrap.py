@@ -15,7 +15,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.db.models import Alert, NetworkDocument, Tenant, User
 from app.db.session import get_engine, get_sessionmaker
 
@@ -61,9 +61,14 @@ def seed_demo(db: Session) -> None:
         db.flush()
         log.info("seeded demo tenant")
     user = db.scalar(select(User).where(User.email == s.demo_user_email.lower()))
+    demo_password = s.demo_user_password.get_secret_value()
     if user is None:
         db.add(User(tenant_id=tenant.id, email=s.demo_user_email.lower(), full_name="Demo planner", role="admin",
-                    password_hash=hash_password(s.demo_user_password.get_secret_value())))
+                    password_hash=hash_password(demo_password)))
+    elif not verify_password(user.password_hash, demo_password):
+        # The demo password follows configuration (VIAMENSA_DEMO_USER_PASSWORD / Key Vault): rotate on startup.
+        user.password_hash = hash_password(demo_password)
+        log.info("demo user password updated from configuration")
     seed_doc = load_seed_network()
     current = db.scalar(select(NetworkDocument).where(NetworkDocument.tenant_id == tenant.id,
                                                       NetworkDocument.is_active.is_(True)))

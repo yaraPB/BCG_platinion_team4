@@ -61,7 +61,11 @@ Claude (`claude-opus-5-5`) receives the network (IDs, names, planned deliveries)
 - Secrets (DB URL, JWT secret, demo password, LLM key) live in Key Vault and are read by Container Apps via a managed identity. There are no registry passwords; images are pulled with AcrPull.
 - Migrations run on start-up under a Postgres advisory lock, so several replicas can start at once.
 
-## 7. Scaling
+## 7. Night theme and accessibility
+
+The workspace declares `color-scheme: dark` and has no theme toggle. Surfaces are graphite panels over a dark hillshaded basemap; the map is the only saturated element. Colour is reserved for meaning: route green for selected routes and on-plan deliveries, river blue for barge legs, amber for supplier changes and coral for unreachable destinations or closed corridors. Text set in a status colour uses a lighter step that clears 4.5:1 on the panel surface, and the four status colours were checked for colour-vision separation with the data-viz palette validator.
+
+## 8. Scaling
 
 - The API is stateless apart from the per-process planner cache, so it scales horizontally (Container Apps HTTP rule, 1–5 replicas by default).
 - Simulation is CPU-bound and memoised. For networks with tens of thousands of edges, swap point-to-point routing for contraction hierarchies (e.g. OSRM) and move large simulations to a queue-backed worker (Container Apps jobs). The engine interfaces do not change.

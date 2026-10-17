@@ -43,6 +43,6 @@ def client():
 
 @pytest.fixture(scope="session")
 def auth(client) -> dict:
-    r = client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "viamensa-demo"})
+    r = client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "winners"})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['accessToken']}"}

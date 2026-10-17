@@ -12,17 +12,17 @@ const features = [
 
 export default function Home() {
   return <div className="landing">
-    <header className="app-header">
+    <header className="landing-header">
       <Link className="brand" href="/" aria-label="ViaMensa home"><span className="brand-mark"><Route size={23} strokeWidth={1.8} /></span><span>ViaMensa<span className="brand-caption">FOOD ACCESS INTELLIGENCE</span></span></Link>
       <nav aria-label="Main navigation"><a href="#features">What it does</a><a href="#how">How it works</a></nav>
-      <Link className="button button-primary sign-in" href="/login">Sign in <ArrowRight size={14} /></Link>
+      <Link className="button primary sign-in" href="/login">Sign in <ArrowRight size={14} /></Link>
     </header>
     <main>
       <section className="hero">
         <p className="breadcrumb">Routing and fallback planning for food deliveries</p>
         <h1>Keep food moving when roads fail<span>.</span></h1>
         <p className="hero-lead">ViaMensa plans each delivery from your supplier to the community. When a road is cut by flooding, fighting, an accident or anything else, it finds the next best option: a detour, another supplier that can still reach the community, the river, or, only when nothing else is left, air.</p>
-        <div className="hero-actions"><Link className="button button-primary" href="/login">Open your workspace <ArrowRight size={14} /></Link><a className="button" href="#how">See how it works</a></div>
+        <div className="hero-actions"><Link className="button primary" href="/login">Open your workspace <ArrowRight size={14} /></Link><a className="button" href="#how">See how it works</a></div>
         <p className="hero-fact">Why it matters: WFP South Sudan puts air delivery at about $2,700 per tonne against about $300 by river (<a href="https://x.com/WFP_SouthSudan/status/1755112404088737797" target="_blank" rel="noreferrer">source</a>). A prepared land or river fallback is the difference.</p>
       </section>
       <section id="features" className="feature-grid" aria-label="What ViaMensa does">

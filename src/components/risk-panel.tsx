@@ -64,7 +64,7 @@ export function RiskPanel({ network, closedRoads }: { network: Network; closedRo
           <div className="form-row"><input placeholder="Source (optional)" value={draft.source} onChange={(e) => setDraft({ ...draft, source: e.target.value })} /><button className="button" disabled={busy !== null || draft.title.length < 3 || draft.body.length < 3} onClick={() => void addAlert()}><Plus size={14} />Add alert</button></div>
         </div>
         <ul className="alert-list">{alerts.map((a) => <li key={a.id}><div><strong>{a.title}</strong><span className="muted">{a.source}{a.isSample ? "" : " · added"}</span><p>{a.body}</p></div><button className="icon-button" aria-label={`Delete alert ${a.title}`} disabled={busy !== null} onClick={() => void removeAlert(a.id)}><Trash2 size={14} /></button></li>)}</ul>
-        <button className="button button-primary" disabled={busy !== null || !alerts.length} onClick={() => void analyze()}><BrainCircuit size={14} />{busy === "analyze" ? "Analysing…" : "Analyse alerts"}</button>
+        <button className="button primary" disabled={busy !== null || !alerts.length} onClick={() => void analyze()}><BrainCircuit size={14} />{busy === "analyze" ? "Analysing…" : "Analyse alerts"}</button>
       </div>
 
       <div className="panel tool-panel">
@@ -86,7 +86,7 @@ export function RiskPanel({ network, closedRoads }: { network: Network; closedRo
             {scope === "itinerary" && <><label>From<select value={origin} onChange={(e) => setOrigin(e.target.value)}>{hubs.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}</select></label>
               <label>To<select value={destination} onChange={(e) => setDestination(e.target.value)}>{communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label></>}
             <label>Futures<select value={runs} onChange={(e) => setRuns(Number(e.target.value))}>{[1000, 5000, 20000].map((n) => <option key={n} value={n}>{formatNumber(n)}</option>)}</select></label>
-            <button className="button button-primary" disabled={busy !== null || !selected.size} onClick={() => void simulate()}><Dices size={14} />{busy === "simulate" ? "Simulating…" : "Run simulation"}</button>
+            <button className="button primary" disabled={busy !== null || !selected.size} onClick={() => void simulate()}><Dices size={14} />{busy === "simulate" ? "Simulating…" : "Run simulation"}</button>
           </div>
         </>}
       </div>

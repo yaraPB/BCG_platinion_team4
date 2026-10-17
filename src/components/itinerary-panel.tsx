@@ -50,7 +50,7 @@ export function ItineraryPanel({ network, closedRoads }: { network: Network; clo
         <label>From supplier<select value={origin} onChange={(e) => setOrigin(e.target.value)}>{hubs.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}</select></label>
         <label>To community<select value={destination} onChange={(e) => setDestination(e.target.value)}>{communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         <label>Optimise for<select value={objective} onChange={(e) => setObjective(e.target.value as "cost" | "time")}><option value="cost">Lowest cost</option><option value="time">Fastest</option></select></label>
-        <button className="button button-primary" onClick={() => void run()} disabled={pending}><Navigation size={14} />{pending ? "Planning…" : "Plan itinerary"}</button>
+        <button className="button primary" onClick={() => void run()} disabled={pending}><Navigation size={14} />{pending ? "Planning…" : "Plan itinerary"}</button>
       </div>
       {error && <p className="error-banner" role="alert"><CircleAlert size={15} />{error}</p>}
       {result && <>
