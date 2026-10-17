@@ -2,7 +2,7 @@
 
 A fullstack food logistics application built with **Next.js, React and TypeScript**. ViaMensa connects a geographic view of South Sudan with server-side route planning, stock allocation and disruption scenarios.
 
-The interface uses a light theme: white surfaces, neutral typography and restrained green accents. MapLibre renders the map and animated delivery movements.
+The interface uses a light theme: white surfaces, neutral typography and restrained green accents. MapLibre renders a detailed South Sudan map, geographic road and river paths, and animated trucks and barges. The frontend redesign preserves the existing planning API and server logic.
 
 ## Quick start
 
@@ -28,14 +28,16 @@ Use `npm run dev -- --port 3001` to change the port.
 
 | Area | Behavior |
 | --- | --- |
-| Control tower | Three hubs, seven communities and fifteen schematic corridors on a light map. |
-| Transport animation | Illustrative movements along delivery routes; pause and resume controls; reduced motion support. |
+| Control tower | Three hubs, seven communities and fifteen geographic corridors on a light OpenFreeMap basemap. |
+| Transport animation | Trucks and barges follow cached road and river geometry, synchronized with a scrubber, pause, restart and playback speed controls. |
 | Scenario planning | Presets and individual closures trigger server-side recalculation of routes, suppliers and stock. |
 | Dispatch board | Search communities, filter deliveries needing attention and select a destination. |
 | Delivery details | Supplier, route, allocation, travel estimate, remaining food and decision explanation. |
-| Network insights | Delivery outcomes, remaining inventory and illustrative corridor exposure. |
+| Risk forecast | Browser-only simulation of 2,000 hypothetical scenarios with adjustable probabilities and a 24/48/72-hour horizon. |
+| Fallback playbook | Community contingencies and indicative reserve requirements derived from the simulation. |
+| Map layers | Road/river routes, illustrative risk areas, optional terrain, selected-route focus and corridor inspection. |
 | Export | Download the current dispatch plan as CSV. |
-| Map fallback | Interactive SVG schematic when geographic rendering is unavailable; keyboard-accessible corridor controls. |
+| Map fallback | Interactive SVG using the same geographic paths when MapLibre cannot load; keyboard-accessible corridor controls. |
 
 ## Stack and structure
 
@@ -58,10 +60,10 @@ src/
     page.tsx                 Server-rendered initial plan
   components/
     dashboard.tsx            Scenario state and API requests
-    dispatch-board.tsx       Searchable delivery list
-    delivery-detail.tsx      Selected route and allocation
-    insights.tsx             Outcomes, stock and corridor controls
-    map/                     MapLibre, SVG fallback and geometry
+    transport-timeline.tsx   Shared playback clock and journey timelines
+    forecast-workspace.tsx   Risk inputs, outcome charts and playbook
+    model/                   Frontend geometry adapter and browser simulation
+    map/                     MapLibre, SVG fallback and transport geometry
   lib/
     data/network.ts          Demonstration dataset
     server/planning.ts       Routing, priority and stock allocation
@@ -70,7 +72,7 @@ tests/                       Planner and API tests
 docs/                        Architecture, API and product reference
 ```
 
-The supplied `index_lina.html`, `mock/` and `assets/` are design references. They are not application entry points or served by Next.js. The active application is entirely in `src/`.
+The supplied `index_lina.html`, `reroute-demo/` and `assets/` are design references. They are not application entry points or served by Next.js. The active application is entirely in `src/`.
 
 ## Commands
 
@@ -102,15 +104,18 @@ Example request body:
 
 ## Data boundaries
 
-This is a planning demonstration. Town coordinates are approximate. Corridors, travel times, risk values, populations, food insecurity phases, stocks and food quantities are synthetic. Map lines are schematic connections; moving markers are illustrations rather than vehicle telemetry.
+This is a planning demonstration. Town coordinates are approximate. Corridor availability, travel times, exposure assumptions, populations, food insecurity phases, stocks and food quantities are synthetic. Road geometry is cached from OpenStreetMap routing; the two river corridors follow cached OpenStreetMap waterway geometry. Geometry and displayed transport modes do not certify road access, navigability or travel time. Moving vehicles illustrate the plan and are not telemetry.
+
+The risk forecast runs entirely in the browser. It samples independent corridor closures using adjustable, synthetic hazard exposure. It does not ingest weather or conflict reports and adds no server endpoint.
 
 The application does not currently include authentication, a database, live conflict/weather feeds or durable saved plans. Every request calculates a fresh scenario without changing another user's view. The farmer and NGO reference mock has separate data and is not connected to this API.
 
-MapLibre is bundled with the application. Basemap tiles need internet access; the corridor model does not need an external routing service.
+MapLibre is bundled with the application. OpenFreeMap tiles, optional terrain tiles and Google Fonts need internet access; cached route geometry and the browser simulation need no external routing service or API key. System fonts provide a fallback. See [Frontend design and mapping](docs/FRONTEND.md) for sources, controls and component structure.
 
 ## Documentation
 
 - [Architecture and planning rules](docs/ARCHITECTURE.md)
+- [Frontend design and mapping](docs/FRONTEND.md)
 - [API contract and examples](docs/API.md)
 - [Original farmer and NGO product plan](docs/PLAN.md) — historical reference
 

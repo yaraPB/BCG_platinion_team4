@@ -63,9 +63,11 @@ This is a priority allocation heuristic. It does not minimise total system trave
 
 The initial page contains a server-calculated plan. Scenario changes call `POST /api/plan`. State is updated only after a successful response. Failed requests retain the previous plan and show a message. Superseded requests are aborted so stale responses cannot overwrite newer choices.
 
-Animation follows calculated coordinate paths. It is illustrative and unrelated to real dispatch timing. Reduced motion preferences disable automatic movement. The map releases animation frames, its resize observer and WebGL resources when unmounted.
+The frontend enriches the plan with cached road and river geometry without changing its routing decisions. Truck and barge animation follows those paths using a shared playback clock and illustrative corridor durations. Reduced motion preferences disable automatic movement. The map releases animation frames, markers, its resize observer and WebGL resources when unmounted.
 
-MapLibre is installed through npm. Its worker URL is declared explicitly so Next.js emits a matching hashed worker asset. `map/basemap.ts` defines a restrained light style over OpenFreeMap vector tiles with OpenMapTiles and OpenStreetMap attribution; no API key is required. The corridor graph can render without tile access. An SVG view is available when the map cannot initialise or its worker fails. The corridor table provides the same closure controls through keyboard-accessible buttons.
+MapLibre is installed through npm. Its worker URL is declared explicitly so Next.js emits a matching hashed worker asset. `map/basemap.ts` uses the complete OpenFreeMap Positron vector style with map attribution; no API key is required. An SVG view using the same cached paths is available when the map cannot initialise. The corridor table provides closure controls through keyboard-accessible buttons. Optional terrain and hypothetical risk footprints are display layers.
+
+The risk forecast and fallback playbook are browser-only features. They add no API endpoint and do not modify the planning service. See [Frontend design and mapping](FRONTEND.md) for the simulation assumptions and geographic sources.
 
 ## 6. Light theme and accessibility
 
