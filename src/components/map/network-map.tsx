@@ -32,10 +32,13 @@ import { palette, percent, statusMeta } from "@/lib/presentation";
 import type { HazardId, Network, Plan, SimulationClock } from "../model/types";
 import { darkBasemap } from "./basemap";
 import {
+  airArc,
   circle,
   hatchTile,
+  planeIcon,
   pointAlong,
   shipIcon,
+  sliceAlong,
   truckIcon,
   vehiclePosition,
   warehouseIcon,
@@ -57,6 +60,8 @@ interface Props {
   view: MapView;
   roadRisk: { id: string; probability: number }[] | null;
   highlightRoadId: string | null;
+  /** Roads a news alert puts at risk, with predicted closure probability (pulsing glow + badges). */
+  endangered?: { id: string; probability: number }[] | null;
   children?: ReactNode;
 }
 
@@ -123,6 +128,7 @@ export default function NetworkMap({
   view,
   roadRisk,
   highlightRoadId,
+  endangered = null,
   children,
 }: Props) {
   const container = useRef<HTMLDivElement>(null),
@@ -409,6 +415,48 @@ export default function NetworkMap({
               "line-dasharray": FLOW_STEPS[0],
             },
           });
+          // News alert: endangered roads (pulsing) and the route-change transition.
+          map.addSource("endangered", { type: "geojson", data: collection([]) });
+          map.addLayer({
+            id: "endangered-glow",
+            type: "line",
+            source: "endangered",
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: { "line-color": riskColor, "line-width": 16, "line-blur": 9, "line-opacity": 0.55 },
+          });
+          map.addLayer({
+            id: "endangered-line",
+            type: "line",
+            source: "endangered",
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: { "line-color": riskColor, "line-width": 3, "line-dasharray": [1.2, 1.4] },
+          });
+          map.addSource("reroute-ghost", { type: "geojson", data: collection([]) });
+          map.addLayer({
+            id: "reroute-ghost",
+            type: "line",
+            source: "reroute-ghost",
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: { "line-color": palette.coral, "line-width": 3, "line-dasharray": [2, 2], "line-opacity": 0 },
+          });
+          map.addSource("reroute-new", { type: "geojson", data: collection([]) });
+          map.addLayer({
+            id: "reroute-new-glow",
+            type: "line",
+            source: "reroute-new",
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: { "line-color": ["case", ["==", ["get", "mode"], "air"], palette.coral, modeColor], "line-width": 14, "line-blur": 7, "line-opacity": 0.5 },
+          });
+          map.addLayer({
+            id: "reroute-new",
+            type: "line",
+            source: "reroute-new",
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: {
+              "line-color": ["case", ["==", ["get", "mode"], "air"], palette.text.coral, ["==", ["get", "mode"], "river"], palette.text.river, palette.text.route],
+              "line-width": 4.5,
+            },
+          });
           map.addLayer({
             id: "corridor-hit",
             type: "line",
@@ -499,6 +547,149 @@ export default function NetworkMap({
       ),
     );
   }, [ready, selected, baseline, selectedId]);
+
+  // Endangered roads from a news alert: pulsing glow plus probability badges.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const items = (endangered ?? [])
+      .map((e) => ({ e, road: network.corridors.find((r) => r.id === e.id) }))
+      .filter((x): x is { e: { id: string; probability: number }; road: Network["corridors"][number] } => !!x.road);
+    (map.getSource("endangered") as GeoJSONSource).setData(
+      collection(items.map(({ e, road }) => line(road.coordinates, { id: e.id, risk: Math.max(0.35, e.probability) }))),
+    );
+    if (!items.length) return;
+    let cancelled = false,
+      frame = 0;
+    const badges: Marker[] = [];
+    void import("maplibre-gl").then(({ Marker }) => {
+      if (cancelled) return;
+      for (const { e, road } of items) {
+        const el = document.createElement("div");
+        el.className = "risk-badge";
+        el.textContent = percent(e.probability);
+        el.title = `${road.name}: ${percent(e.probability)} chance of closure`;
+        badges.push(new Marker({ element: el }).setLngLat(pointAlong(road.coordinates, 0.5).point).addTo(map));
+      }
+    });
+    if (!reducedMotion) {
+      const pulse = (now: number) => {
+        map.setPaintProperty("endangered-glow", "line-opacity", 0.3 + 0.35 * (0.5 + 0.5 * Math.sin(now / 280)));
+        frame = requestAnimationFrame(pulse);
+      };
+      frame = requestAnimationFrame(pulse);
+    }
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      badges.forEach((b) => b.remove());
+    };
+  }, [ready, network, endangered, reducedMotion]);
+
+  // Route-change transition: when the plan changes, every delivery whose route changed shows its old route fading
+  // out, the new route drawing itself from the supplier, and a scout vehicle that drives it with a label.
+  const previousPlan = useRef<Plan | null>(null);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const before = previousPlan.current;
+    previousPlan.current = plan;
+    if (!before || before === plan) return;
+    const name = (id: string | null | undefined) => network.nodes.find((n) => n.id === id)?.name ?? id ?? "";
+    const changes = plan.deliveries.flatMap((d) => {
+      const old = before.deliveries.find((x) => x.communityId === d.communityId);
+      if (!old || (old.roadIds.join() === d.roadIds.join() && old.supplierId === d.supplierId && old.status === d.status)) return [];
+      const planned = baseline.deliveries.find((x) => x.communityId === d.communityId);
+      let path: number[][], mode: string, label: string;
+      if (d.legs.length) {
+        path = d.coordinates;
+        mode = d.legs.some((l) => l.mode === "river") ? "river" : "road";
+        label = d.supplierId !== planned?.supplierId
+          ? `${d.name} · new supplier ${name(d.supplierId)}`
+          : d.status === "on-plan"
+            ? `${d.name} · back on plan`
+            : `${d.name} · rerouted${mode === "river" ? " by river" : ""}`;
+      } else if (d.airlift) {
+        const from = network.nodes.find((n) => n.id === d.airlift!.supplier)!.coordinates;
+        const to = network.nodes.find((n) => n.id === d.communityId)!.coordinates;
+        path = airArc(from, to);
+        mode = "air";
+        label = `${d.name} · airlift from ${name(d.airlift.supplier)}`;
+      } else return [];
+      return [{ d, old: old.legs.length ? old.coordinates : null, path: path as [number, number][], mode, label }];
+    });
+    const ghost = map.getSource("reroute-ghost") as GeoJSONSource,
+      fresh = map.getSource("reroute-new") as GeoJSONSource;
+    if (!changes.length || reducedMotion) {
+      ghost.setData(collection([]));
+      fresh.setData(collection([]));
+      return;
+    }
+    const all = changes.flatMap((c) => [...c.path, ...(c.old ?? [])]);
+    const lngs = all.map((p) => p[0]),
+      lats = all.map((p) => p[1]);
+    const pad = framePadding();
+    const card = container.current?.parentElement?.querySelector(".incident-card") as HTMLElement | null;
+    if (card) pad.left = Math.max(pad.left, card.offsetWidth + 40);
+    // Keep the animation clear of the presenter's demo guide where it overlaps the bottom of the map.
+    const guide = document.querySelector(".demo-guide");
+    const box = container.current?.getBoundingClientRect();
+    if (guide && box) {
+      const overlap = box.bottom - guide.getBoundingClientRect().top;
+      if (overlap > 0 && overlap < box.height / 2) pad.bottom = Math.max(pad.bottom, overlap + 24);
+    }
+    map.fitBounds(
+      [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+      { padding: pad, maxZoom: 7.6, duration: 900 },
+    );
+    ghost.setData(collection(changes.filter((c) => c.old).map((c) => line(c.old!))));
+    map.setPaintProperty("reroute-ghost", "line-opacity", 0.95);
+    let cancelled = false,
+      frame = 0;
+    const scouts: { marker: Marker; el: HTMLElement; body: HTMLElement }[] = [];
+    const DRAW = 2600, STAGGER = 450, HOLD = 2600, START = 950;
+    const total = START + DRAW + STAGGER * (changes.length - 1) + HOLD;
+    void import("maplibre-gl").then(({ Marker }) => {
+      if (cancelled) return;
+      changes.forEach((c, i) => {
+        const el = document.createElement("div");
+        el.className = `reroute-scout ${c.mode}`;
+        el.innerHTML = `<span class="scout-ring"></span><span class="scout-body">${c.mode === "air" ? planeIcon : c.mode === "river" ? shipIcon : truckIcon}</span>${i < 4 ? `<span class="scout-label">${c.label}</span>` : ""}`;
+        scouts.push({ marker: new Marker({ element: el }).setLngLat(c.path[0]).addTo(map), el, body: el.querySelector(".scout-body") as HTMLElement });
+      });
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = now - t0;
+        fresh.setData(collection(changes.map((c, i) => {
+          const p = Math.min(1, Math.max(0, (t - START - i * STAGGER) / DRAW));
+          return line(sliceAlong(c.path, p), { mode: c.mode });
+        })));
+        changes.forEach((c, i) => {
+          const p = Math.min(1, Math.max(0, (t - START - i * STAGGER) / DRAW));
+          const at = pointAlong(c.path, p);
+          scouts[i]?.marker.setLngLat(at.point);
+          if (scouts[i]) scouts[i].body.style.transform = `rotate(${at.bearing - map.getBearing()}deg)`;
+        });
+        const fade = Math.min(1, Math.max(0, (t - START - DRAW * 0.6) / 1800));
+        map.setPaintProperty("reroute-ghost", "line-opacity", 0.95 * (1 - fade));
+        if (t > total - 700) scouts.forEach((sc) => sc.el.classList.add("leaving"));
+        if (t < total) frame = requestAnimationFrame(step);
+        else {
+          scouts.forEach((sc) => sc.marker.remove());
+          ghost.setData(collection([]));
+          fresh.setData(collection([]));
+        }
+      };
+      frame = requestAnimationFrame(step);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      scouts.forEach((sc) => sc.marker.remove());
+    };
+    // Runs on plan changes only; framing reads the current view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, plan]);
 
   // Hover highlight from the corridor and exposure lists.
   useEffect(() => {

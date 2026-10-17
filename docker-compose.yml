@@ -30,6 +30,7 @@ services:
       dockerfile: Dockerfile.web
     environment:
       VIAMENSA_API_URL: http://api:8000
+      VIAMENSA_DEMO_PASSWORD: ${VIAMENSA_DEMO_USER_PASSWORD:-winners}
     depends_on: [api]
     ports: ["3000:3000"]
 

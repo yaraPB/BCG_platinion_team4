@@ -291,3 +291,39 @@ export interface Assumption {
   source: string;
   url: string | null;
 }
+
+export interface NewsTemplate {
+  id: string;
+  title: string;
+  teaser: string;
+}
+
+export interface IncidentSuggestion {
+  destination: string;
+  name: string;
+  people: number;
+  tonnes: number;
+  action: "reroute" | "new_supplier" | "switch_supplier" | "airlift";
+  currentSupplier: string | null;
+  suggestedSupplier: string;
+  newSupplier: boolean;
+  untraveledCorridors: string[];
+  modes: string[];
+  corridors: string[];
+  costPerT: number;
+  hours: number;
+  currentCostPerT: number | null;
+  currentHours: number | null;
+  pRouteCut: number;
+  explanation: string;
+}
+
+export interface BreakingNews {
+  alert: Alert;
+  analysis: Analysis;
+  endangeredRoads: { corridorId: string; name: string; mode: string; pClosed: number }[];
+  predictedClosures: string[];
+  ifItHappens: { closes: string[]; degrades: string[] };
+  suggestions: IncidentSuggestion[];
+  simulation: { runs: number; uniqueStates: number; elapsedMs: number; pNetworkSplit: number; pAnyDisruption: number };
+}

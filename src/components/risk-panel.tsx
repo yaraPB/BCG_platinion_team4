@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrainCircuit, CircleAlert, Dices, Plus, Trash2 } from "lucide-react";
 import { api, hours, pct, usd } from "@/lib/api";
 import { formatNumber } from "@/lib/presentation";
@@ -9,7 +9,12 @@ import type { Alert, Analysis, Network, Simulation } from "@/lib/types";
 const likelihoodLabel = { very_likely: "Very likely", likely: "Likely", possible: "Possible", unlikely: "Unlikely" };
 const shareColors = { "on-plan": "#287b61", rerouted: "#547aa3", "supplier-changed": "#a97529", airlift: "#b74a43" } as const;
 
-export function RiskPanel({ network, closedRoads }: { network: Network; closedRoads: string[] }) {
+export function RiskPanel({ network, closedRoads, autoRunKey = 0 }: {
+  network: Network;
+  closedRoads: string[];
+  /** Changing this number analyses all alerts and simulates them (demo guide). */
+  autoRunKey?: number;
+}) {
   const name = (id: string) => network.nodes.find((n) => n.id === id)?.name ?? network.corridors.find((c) => c.id === id)?.name ?? id;
   const hubs = network.nodes.filter((n) => n.kind === "hub");
   const communities = network.nodes.filter((n) => n.kind === "community");
@@ -24,8 +29,32 @@ export function RiskPanel({ network, closedRoads }: { network: Network; closedRo
   const [sim, setSim] = useState<Simulation | null>(null);
   const [busy, setBusy] = useState<null | "alert" | "analyze" | "simulate">(null);
   const [error, setError] = useState<string | null>(null);
+  const results = useRef<HTMLDivElement>(null);
+  const revealResults = useRef(false);
 
   useEffect(() => { api<Alert[]>("alerts").then(setAlerts).catch(() => setError("Unable to load alerts.")); }, []);
+  useEffect(() => {
+    if (!autoRunKey) return;
+    let cancelled = false;
+    api<Analysis>("alerts/analyze", { body: { horizonDays: 7 } })
+      .then(async (result) => {
+        if (cancelled) return;
+        setAnalysis(result);
+        setSelected(new Set(result.issues.map((i) => i.id)));
+        const simulation = await api<Simulation>("simulations", { body: { analysisId: result.id, runs: 5000, closedRoads } });
+        if (cancelled) return;
+        revealResults.current = true;
+        setSim(simulation);
+      })
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : "Request failed."); });
+    return () => { cancelled = true; };
+  }, [autoRunKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // After a demo auto-run, bring the simulation results into view.
+    if (!sim || !revealResults.current) return;
+    revealResults.current = false;
+    results.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [sim]);
 
   async function guard<T>(kind: "alert" | "analyze" | "simulate", fn: () => Promise<T>) {
     setBusy(kind);
@@ -92,10 +121,10 @@ export function RiskPanel({ network, closedRoads }: { network: Network; closedRo
       </div>
     </div>
 
-    {sim && <div className="panel tool-panel sim-results">
+    {sim && <div ref={results} className="panel tool-panel sim-results">
       <div className="kpis">
         <div className="kpi"><span>Futures simulated</span><strong>{formatNumber(sim.runs)}</strong><small>{formatNumber(sim.uniqueStates)} distinct network states · {Math.round(sim.elapsedMs)} ms</small></div>
-        <div className="kpi"><span>Network splits</span><strong>{pct(sim.pNetworkSplit)}</strong><small>of futures cut the network into islands</small></div>
+        <div className="kpi"><span>{closedRoads.length ? "Further network splits" : "Network splits"}</span><strong>{pct(sim.pNetworkSplit)}</strong><small>{closedRoads.length ? "of futures split it beyond the current closures" : "of futures cut the network into islands"}</small></div>
         <div className="kpi"><span>Expected saving vs airlift</span><strong>{usd(sim.impact.expectedUsdSavedVsAirlift)}</strong><small>per cycle, from prepared fallbacks</small></div>
         <div className="kpi"><span>People-days protected</span><strong>{formatNumber(sim.impact.expectedPeopleDaysProtectedVsWaiting)}</strong><small>vs waiting for roads to reopen</small></div>
       </div>

@@ -111,7 +111,7 @@ export function ForecastControls({
                 <dd>{percent(forecast.disruptionProbability)}</dd>
               </div>
               <div>
-                <dt>Network splits in two</dt>
+                <dt>Network splits further</dt>
                 <dd>{percent(forecast.splitProbability)}</dd>
               </div>
             </dl>

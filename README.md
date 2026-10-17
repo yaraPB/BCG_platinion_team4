@@ -43,6 +43,7 @@ npm ci && VIAMENSA_API_URL=http://localhost:8000 npm run dev
 
 Sign in with `demo@viamensa.app` / `winners` (local default; set `VIAMENSA_DEMO_USER_PASSWORD` to change it).
 Set `ANTHROPIC_API_KEY` for LLM alert analysis; without it the API uses the rule-based analyser.
+For a live demo, press `D` in the workspace (or open `/app?demo=1`) for the presenter guide; `N` triggers a breaking-news alert and `R` resets.
 
 ## Deploy to Azure
 

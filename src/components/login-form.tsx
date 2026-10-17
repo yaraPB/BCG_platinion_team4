@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 
-export function LoginForm() {
+export function LoginForm({ demo = null }: { demo?: { email: string; password: string } | null }) {
   const router = useRouter();
   const [email, setEmail] = useState("demo@viamensa.app");
   const [password, setPassword] = useState("");
@@ -32,5 +32,6 @@ export function LoginForm() {
     <label>Password<input name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
     {error && <p className="error-banner" role="alert">{error}</p>}
     <button className="button primary" type="submit" disabled={pending}><LogIn size={14} />{pending ? "Signing in…" : "Sign in"}</button>
+    {demo && <button className="button login-demo" type="button" disabled={pending} onClick={() => { setEmail(demo.email); setPassword(demo.password); }}>Use demo account</button>}
   </form>;
 }

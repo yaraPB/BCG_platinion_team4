@@ -22,9 +22,10 @@ def test_rules_map_alerts_to_network(net):
     ex = analyze_rules(net, alerts())
     kinds = {i.kind for i in ex.issues}
     assert {"conflict", "fuel_shortage"} <= kinds
-    nasir = next(i for i in ex.issues if i.kind == "conflict")
-    assert "river-nasir-malakal" in nasir.affected_corridor_ids and "ulang-nasir" in nasir.affected_corridor_ids
-    assert nasir.likelihood == "very_likely"
+    conflict = [i for i in ex.issues if i.kind == "conflict"]
+    corridors = {c for i in conflict for c in i.affected_corridor_ids}
+    assert {"river-nasir-malakal", "ulang-nasir"} <= corridors  # one issue per clause, each mapped to its corridor
+    assert all(i.likelihood == "very_likely" for i in conflict)
     assert all(i.evidence_alert_ids for i in ex.issues)
 
 
@@ -73,3 +74,15 @@ def test_refusal_falls_back(net):
 def test_no_key_falls_back(net):
     ex, note = asyncio.run(call_with_fallback(None, net, alerts(), {}, 7))
     assert ex is None and "No LLM API key" in note
+
+
+def test_rules_read_each_sentence(net):
+    alert = AlertInput(id="n1", title="Floods cut the Juba–Bor road as attacks halt Nile barges", body=(
+        "Flash floods have submerged the Juba–Bor highway near Mangalla. Armed men attacked a barge convoy, and river "
+        "convoys between Juba and Bor are suspended. Forecasters expect more rain, which could make the Bor–Pibor "
+        "track impassable."))
+    ex = analyze_rules(net, [alert])
+    by_corridor = {tuple(i.affected_corridor_ids): i for i in ex.issues}
+    assert by_corridor[("juba-bor",)].kind == "flood"
+    assert by_corridor[("river-juba-bor",)].kind == "conflict"  # river vocabulary picks the barge leg, not the road
+    assert by_corridor[("bor-pibor",)].likelihood in ("likely", "possible")

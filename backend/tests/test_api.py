@@ -131,3 +131,25 @@ def test_demo_password_follows_configuration(client):
         with get_sessionmaker()() as db:
             seed_demo(db)
     assert client.post("/v1/auth/token", json={"email": "demo@viamensa.app", "password": "winners"}).status_code == 200
+
+
+def test_breaking_news_predicts_roads_and_suggests_new_supplier(client, auth):
+    templates = client.get("/v1/alerts/templates", headers=auth).json()
+    assert {t["id"] for t in templates} >= {"jonglei-crisis", "juba-bor-accident", "unity-checkpoints", "sobat-clashes"}
+    brief = client.post("/v1/alerts/simulate", headers=auth, json={"templateId": "jonglei-crisis", "useLlm": False}).json()
+    assert brief["alert"]["source"].startswith("Simulated")
+    endangered = {e["corridorId"]: e["pClosed"] for e in brief["endangeredRoads"]}
+    assert {"juba-bor", "river-juba-bor", "bor-pibor"} <= set(endangered)
+    assert all(0 < p <= 1 for p in endangered.values())
+    bor = next(s for s in brief["suggestions"] if s["destination"] == "bor")
+    assert bor["action"] == "new_supplier" and bor["suggestedSupplier"] == "malakal" and bor["newSupplier"]
+    assert "river-bor-malakal" in bor["untraveledCorridors"]
+    # Applying the scenario the suggestions were computed from reproduces them.
+    plan = client.post("/v1/plan", headers=auth, json={"closedRoads": brief["ifItHappens"]["closes"]}).json()
+    assert next(d for d in plan["deliveries"] if d["communityId"] == "bor")["supplierId"] == "malakal"
+    assert client.post("/v1/demo/reset", headers=auth).json()["removedAlerts"] >= 1
+    assert not [a for a in client.get("/v1/alerts", headers=auth).json() if a["source"].startswith("Simulated")]
+
+
+def test_breaking_news_unknown_template(client, auth):
+    assert client.post("/v1/alerts/simulate", headers=auth, json={"templateId": "nope", "useLlm": False}).status_code == 404

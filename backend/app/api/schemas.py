@@ -264,6 +264,48 @@ class AnalysisOut(CamelModel):
     notice: str
 
 
+class NewsTemplateOut(CamelModel):
+    id: str
+    title: str
+    teaser: str
+
+
+class BreakingNewsIn(CamelModel):
+    template_id: str | None = None
+    closed_roads: list[str] = Field(default_factory=list, max_length=500)
+    use_llm: bool = True
+
+
+class SuggestionOut(CamelModel):
+    destination: str
+    name: str
+    people: int
+    tonnes: float
+    action: Literal["reroute", "new_supplier", "switch_supplier", "airlift"]
+    current_supplier: str | None
+    suggested_supplier: str
+    new_supplier: bool
+    untraveled_corridors: list[str]
+    modes: list[str]
+    corridors: list[str]
+    cost_per_t: float
+    hours: float
+    current_cost_per_t: float | None
+    current_hours: float | None
+    p_route_cut: float
+    explanation: str
+
+
+class BreakingNewsOut(CamelModel):
+    alert: AlertOut
+    analysis: AnalysisOut
+    endangered_roads: list[dict[str, Any]]
+    predicted_closures: list[str]
+    if_it_happens: dict[str, list[str]]
+    suggestions: list[SuggestionOut]
+    simulation: dict[str, float]
+
+
 # ---- simulation ---------------------------------------------------------------------------------------------
 class HazardIn(CamelModel):
     id: str | None = Field(default=None, max_length=60)

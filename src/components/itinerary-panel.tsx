@@ -7,12 +7,22 @@ import type { DeliveryOption, Itinerary, Network } from "@/lib/types";
 
 const kindLabel: Record<DeliveryOption["kind"], string> = { planned: "Planned route", reroute: "Detour, same supplier", switch_supplier: "Switch supplier", airlift: "Air delivery" };
 
-export function ItineraryPanel({ network, closedRoads }: { network: Network; closedRoads: string[] }) {
+export function ItineraryPanel({ network, closedRoads, initialDestination, autoRunKey = 0 }: {
+  network: Network;
+  closedRoads: string[];
+  initialDestination?: string;
+  /** Changing this number plans the itinerary automatically (demo guide). */
+  autoRunKey?: number;
+}) {
   const hubs = network.nodes.filter((n) => n.kind === "hub");
   const communities = network.nodes.filter((n) => n.kind === "community");
   const name = (id: string) => network.nodes.find((n) => n.id === id)?.name ?? id;
+  const plannedHub = (community: string) => {
+    const node = network.nodes.find((n) => n.id === community);
+    return node && node.kind === "community" ? node.plannedHub : null;
+  };
   const [origin, setOrigin] = useState(hubs[0]?.id ?? "");
-  const [destination, setDestination] = useState(communities[0]?.id ?? "");
+  const [destination, setDestination] = useState(initialDestination ?? communities[0]?.id ?? "");
   const [objective, setObjective] = useState<"cost" | "time">("cost");
   const [result, setResult] = useState<Itinerary | null>(null);
   const [pending, setPending] = useState(false);
@@ -29,6 +39,15 @@ export function ItineraryPanel({ network, closedRoads }: { network: Network; clo
       setPending(false);
     }
   }, [origin, destination, objective, closedRoads]);
+
+  useEffect(() => {
+    if (!autoRunKey) return;
+    const controller = new AbortController();
+    api<Itinerary>("itineraries", { body: { origin, destination, objective, closedRoads }, signal: controller.signal })
+      .then(setResult)
+      .catch((cause) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Unable to plan the itinerary."); });
+    return () => controller.abort();
+  }, [autoRunKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-plan automatically when the closures change after a first run (state is only set in the async callback).
   const closedKey = closedRoads.join(",");
@@ -64,7 +83,7 @@ export function ItineraryPanel({ network, closedRoads }: { network: Network; clo
           <tbody>
             {result.baseline && <tr className="row-muted"><td>Plan (all roads open)</td><td>{name(result.baseline.supplier)}</td><td>{result.baseline.modes.join(" + ")}</td><td>{Math.round(result.baseline.km)} km</td><td>{hours(result.baseline.hours)}</td><td>{usd(result.baseline.costPerTonne)}</td><td>{usd(result.baseline.costPerTonne * result.tonnes)}</td></tr>}
             {result.options.slice(0, 6).map((o, i) => <tr key={`${o.kind}-${o.supplier}`} className={i === 0 ? "row-best" : ""}>
-              <td>{kindLabel[o.kind]}{i === 0 && <span className="best-tag">best</span>}</td><td>{name(o.supplier)}</td>
+              <td>{kindLabel[o.kind]}{o.kind === "switch_supplier" && o.supplier !== plannedHub(result.destination) && <span className="new-tag">new supplier</span>}{i === 0 && <span className="best-tag">best</span>}</td><td>{name(o.supplier)}</td>
               <td title={o.route?.nodes.map(name).join(" → ")}>{o.route ? o.route.modes.join(" + ") : "air"}</td>
               <td>{o.route ? `${Math.round(o.route.km)} km` : `${Math.round(o.airKm ?? 0)} km (air)`}</td><td>{hours(o.hours)}</td><td>{usd(o.costPerTonne)}</td><td>{usd(o.totalCostUsd)}</td>
             </tr>)}

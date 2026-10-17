@@ -37,6 +37,15 @@ The plan endpoint keeps the web types' shape: `status` is `unreachable` when onl
 | DELETE | `/v1/alerts/{id}` | Remove an alert |
 | POST | `/v1/alerts/analyze` | `{alertIds?, horizonDays?, useLlm?}` → ranked issues mapped to corridor/node IDs |
 | GET | `/v1/analyses/latest`, `/v1/analyses/{id}` | Stored analyses |
+| GET | `/v1/alerts/templates` | Breaking-news templates for demos and drills |
+| POST | `/v1/alerts/simulate` | `{templateId?, closedRoads?, useLlm?}` → publishes a simulated alert, analyses it and returns an incident brief |
+| POST | `/v1/demo/reset` | Deletes the simulated alerts |
+
+Simulated alerts are stored with the source `Simulated newswire (demo)` and `isSample: true`, so they are never mistaken for real reports. The incident brief contains:
+- `endangeredRoads`: closure probability per corridor from 2,000 correlated futures of the alert's issues, on top of `closedRoads`
+- `predictedClosures`: corridors with a closure probability of at least 0.5
+- `ifItHappens`: `closes` and `degrades` under each issue's most likely outcome
+- `suggestions[]`: every delivery whose plan changes in that case, with `action` (`new_supplier`, `switch_supplier`, `reroute` or `airlift`), `newSupplier` (the supplier has never served that community in the plan), `untraveledCorridors` (legs that no current delivery uses), cost and time against the current plan, and `pRouteCut`
 
 Each issue has `likelihood` (`very_likely` / `likely` / `possible` / `unlikely`), `severity`, the band `probability` used in simulation, `affectedCorridorIds`, `affectedNodeIds`, `durationDays`, `rationale` and `evidenceAlertIds`. `engine` is `claude` or `rules`; `engineNote` explains any fallback.
 

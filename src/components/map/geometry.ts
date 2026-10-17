@@ -93,3 +93,34 @@ export const warehouseIcon =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 9 9-5 9 5v11H3Z"/><path d="M8 20v-8h8v8M8 15h8M8 18h8"/></svg>';
 export const truckIcon = `<svg viewBox="0 0 24 36"><rect x="2" y="5" width="4" height="7" rx="1" fill="${palette.canvas}"/><rect x="18" y="5" width="4" height="7" rx="1" fill="${palette.canvas}"/><rect x="2" y="25" width="4" height="7" rx="1" fill="${palette.canvas}"/><rect x="18" y="25" width="4" height="7" rx="1" fill="${palette.canvas}"/><path d="M6 2h12l2 8v22H4V10Z" fill="${palette.route}" stroke="${palette.canvas}" stroke-width="1.4"/><path d="M7 5h10l1 5H6Z" fill="#0f2b22"/><rect x="6" y="14" width="12" height="16" rx="1" fill="#e4ebe6"/><path d="M8 18h8v2H8Zm0 4h8v2H8Z" fill="#9fb3a8"/></svg>`;
 export const shipIcon = `<svg viewBox="0 0 24 36"><path d="M12 1 21 11 19 31 12 35 5 31 3 11Z" fill="${palette.river}" stroke="${palette.canvas}" stroke-width="1.5"/><path d="M9 5h6v7H9Z" fill="#0f2233"/><rect x="7" y="14" width="10" height="14" rx="1" fill="#e4ebe6"/><path d="M9 17h6M9 21h6M9 25h6" stroke="#8fa9bd" stroke-width="2"/></svg>`;
+
+/** Leading part of a polyline up to `fraction` of its (distance-weighted) length, ending exactly at the cut point. */
+export function sliceAlong(coordinates: Coordinate[], fraction: number): Coordinate[] {
+  if (coordinates.length < 2 || fraction >= 1) return coordinates;
+  if (fraction <= 0) return [coordinates[0], coordinates[0]];
+  const lengths = coordinates.slice(1).map((p, i) => Math.hypot((p[0] - coordinates[i][0]) * Math.cos((p[1] * Math.PI) / 180), p[1] - coordinates[i][1]));
+  let remaining = lengths.reduce((a, b) => a + b, 0) * fraction;
+  const out: Coordinate[] = [coordinates[0]];
+  for (let i = 0; i < lengths.length; i++) {
+    const a = coordinates[i], b = coordinates[i + 1];
+    if (remaining <= lengths[i]) {
+      const t = lengths[i] ? remaining / lengths[i] : 0;
+      out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      return out;
+    }
+    out.push(b);
+    remaining -= lengths[i];
+  }
+  return out;
+}
+
+/** Curved flight path (quadratic Bézier) for air deliveries, bowed toward the north. */
+export function airArc(from: Coordinate, to: Coordinate, steps = 48): Coordinate[] {
+  const mid: Coordinate = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2 + Math.hypot(to[0] - from[0], to[1] - from[1]) * 0.28];
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const t = i / steps, u = 1 - t;
+    return [u * u * from[0] + 2 * u * t * mid[0] + t * t * to[0], u * u * from[1] + 2 * u * t * mid[1] + t * t * to[1]] as Coordinate;
+  });
+}
+
+export const planeIcon = '<svg viewBox="0 0 24 24"><path d="M12 2c.9 0 1.5.8 1.5 1.8v5.4l7.5 4.3v2l-7.5-2.3v4.6l2 1.6V21l-3.5-1-3.5 1v-1.6l2-1.6v-4.6L3 15.5v-2l7.5-4.3V3.8C10.5 2.8 11.1 2 12 2Z" fill="#ff8c7c" stroke="white" stroke-width="1"/></svg>';

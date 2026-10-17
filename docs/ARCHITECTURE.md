@@ -58,7 +58,7 @@ Claude (`claude-opus-5-5`) receives the network (IDs, names, planned deliveries)
 
 - Multi-tenant: every row carries `tenant_id`; every query is scoped by the signed-in user's tenant. A test checks cross-tenant access.
 - Passwords are hashed with Argon2; JWT is HS256 with issuer and expiry; rate limits apply to sign-in and analysis.
-- Secrets (DB URL, JWT secret, demo password, LLM key) live in Key Vault and are read by Container Apps via a managed identity. There are no registry passwords; images are pulled with AcrPull.
+- Secrets (DB URL, JWT secret, demo password, LLM key) live in Key Vault and are read by Container Apps via a managed identity. With `useRoleAssignments=true`, Key Vault uses RBAC and images are pulled with AcrPull, so there are no registry passwords. In a resource group where the deployer has Contributor only (no role assignments), the template uses Key Vault access policies and the ACR admin credential, stored as a Container Apps secret.
 - Migrations run on start-up under a Postgres advisory lock, so several replicas can start at once.
 
 ## 7. Night theme and accessibility

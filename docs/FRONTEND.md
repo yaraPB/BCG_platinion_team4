@@ -35,6 +35,14 @@ The desktop layout is a fixed-viewport grid that does not scroll:
 
 Below 1100px the shell becomes a scrolling page: ticker, horizontal view bar, header with wrapped readouts, the map at 62% of the viewport height, then the side-column content and the bottom strip.
 
+## Breaking news and demo mode
+
+**Breaking news** (header) publishes a simulated alert from a template (`POST /v1/alerts/simulate`). The incident card on the map shows the alert, which analyst ran (Claude or rules), the endangered roads with their closure probability (also drawn on the map with a pulsing risk colour and % badges), and one suggestion per affected delivery. Suggestions lead with suppliers that have never served that community and flag legs no current delivery travels. **Apply scenario & re-plan** closes the roads the alert would most likely close and re-plans. The card then collapses to a summary so the map stays visible.
+
+**Re-plan animation.** When a plan changes, the map frames the changed deliveries (avoiding the incident card and the demo guide) and dims the old route to a dashed ghost. A vehicle then draws each new route from its supplier, labelled with the decision: "Bor · new supplier Malakal", "rerouted by river" or "airlift from Juba" (a plane on an arc). Deliveries are staggered, then the overlay clears.
+
+**Demo mode** (`D`, the Demo button, or `/app?demo=1`) opens a presenter guide with six steps: the network, breaking news, apply and re-plan, compare options for Bor, simulate all alerts, and savings. Each step has a line to say and a button that performs it. Keys: `→` run the step and advance, `←` back, `N` breaking news, `R` reset (removes simulated alerts and reopens every corridor), `D` hide. On short screens (below 820 px high), the tower view hides the transport strip while the guide is open, so the map keeps its height. The sign-in page offers **Use demo account** when the server sets `VIAMENSA_DEMO_PASSWORD`; set `showDemoLogin=false` in the Bicep parameters to remove it.
+
 ## Map controls
 
 | Control | Result |
@@ -62,6 +70,7 @@ Trucks and barges follow the cached path in each delivery leg. Animation is time
 - `transport-timeline.tsx`: playback controls, time scrubber and per-delivery leg tracks.
 - `model/simulation.ts`: sends the forecast assumptions to `POST /v1/simulations` (correlated server model) and maps the response to the forecast and playbook views.
 - `itinerary-panel.tsx`, `risk-panel.tsx`, `impact-panel.tsx`: the Route A→B, Alerts and Savings sheets.
+- `breaking-news.tsx`: the Breaking news menu and the incident card. `demo-guide.tsx`: the presenter guide.
 - `forecast-workspace.tsx`: `ForecastControls` (assumptions, outlook, corridor exposure), `OutlookChart` (stacked outcome bars), `PlaybookReserves` and `PlaybookTable`.
 - `lib/presentation.ts`: the shared palette, status metadata and number formatting used by both CSS-free map code and React components.
 

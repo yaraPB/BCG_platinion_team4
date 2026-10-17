@@ -40,6 +40,9 @@ param useRoleAssignments bool = false
 
 @description('Object ID of the deploying user/principal; given read/write on vault secrets so redeploys can reuse them (access-policy mode).')
 param deployerObjectId string = ''
+
+@description('Show a one-click "Use demo account" button on the sign-in page (demo deployments only).')
+param showDemoLogin bool = true
 param apiMinReplicas int = 1
 param apiMaxReplicas int = 5
 
@@ -244,7 +247,8 @@ resource web 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
     configuration: {
       ingress: { external: true, targetPort: 3000, transport: 'auto', allowInsecure: false }
       registries: [ registry ]
-      secrets: registrySecrets
+      // The demo password is shown on the sign-in page as a one-click shortcut (set showDemoLogin=false to hide it).
+      secrets: concat(registrySecrets, showDemoLogin ? [ { name: 'demo-user-password', keyVaultUrl: secretDemo.properties.secretUri, identity: identity.id } ] : [])
     }
     template: {
       containers: [
@@ -252,9 +256,10 @@ resource web 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
           name: 'web'
           image: '${acr.properties.loginServer}/viamensa-web:${webImageTag}'
           resources: { cpu: json('0.5'), memory: '1Gi' }
-          env: [
-            { name: 'VIAMENSA_API_URL', value: 'https://${names.api}.${env.properties.defaultDomain}' }
-          ]
+          env: concat(
+            [ { name: 'VIAMENSA_API_URL', value: 'https://${names.api}.${env.properties.defaultDomain}' } ],
+            showDemoLogin ? [ { name: 'VIAMENSA_DEMO_PASSWORD', secretRef: 'demo-user-password' } ] : []
+          )
           probes: [ { type: 'Liveness', httpGet: { path: '/', port: 3000 }, periodSeconds: 30, initialDelaySeconds: 15 } ]
         }
       ]
