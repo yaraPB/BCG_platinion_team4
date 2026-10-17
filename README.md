@@ -1,5 +1,7 @@
 # ViaMensa
 
+> ViaMensa	Latin	Via (road) + Mensa (table). A road to every table
+
 A fullstack food logistics application built with **Next.js, React and TypeScript**. ViaMensa connects a geographic view of South Sudan with server-side route planning, stock allocation and disruption scenarios.
 
 The interface uses a light theme: white surfaces, neutral typography and restrained green accents. MapLibre renders a detailed South Sudan map, geographic road and river paths, and animated trucks and barges. The frontend redesign preserves the existing planning API and server logic.
