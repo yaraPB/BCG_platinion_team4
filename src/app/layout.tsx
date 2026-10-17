@@ -1,18 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Sans_Condensed } from "next/font/google";
+import { Archivo } from "next/font/google";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
-const sans = IBM_Plex_Sans({
+// One variable family with a width axis: normal width for text, a narrow cut
+// for dense labels and axis ticks (see --cond in globals.css).
+const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "variable",
+  axes: ["wdth"],
   variable: "--font-sans",
-  display: "swap",
-});
-const condensed = IBM_Plex_Sans_Condensed({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-condensed",
   display: "swap",
 });
 
@@ -26,7 +23,7 @@ export const viewport: Viewport = { colorScheme: "dark", themeColor: "#0b1013" }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${condensed.variable}`}>
+    <html lang="en" className={archivo.variable}>
       <body>{children}</body>
     </html>
   );

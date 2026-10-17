@@ -330,7 +330,9 @@ export function Dashboard({
   const current = views.find((v) => v.id === view)!;
 
   return (
-    <div className={`app-shell view-${view}`}>
+    <div
+      className={`app-shell view-${view} ${pending || forecastPending ? "busy" : ""}`}
+    >
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -534,10 +536,7 @@ export function Dashboard({
               </div>
               <div className="side-section reserves">
                 <div className="side-head">
-                  <h2>
-                    <Warehouse size={14} />
-                    Supply reserves
-                  </h2>
+                  <h2>Supply reserves</h2>
                   <span>after allocation</span>
                 </div>
                 {network.nodes

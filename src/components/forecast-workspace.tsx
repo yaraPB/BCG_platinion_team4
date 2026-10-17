@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  ChartNoAxesCombined,
-  Play,
-  ShieldCheck,
-  Warehouse,
-} from "lucide-react";
+import { ArrowRight, Play, ShieldCheck, Warehouse } from "lucide-react";
 import type { Forecast, ForecastInput, HazardId, Network } from "./model/types";
 import { formatNumber, percent, statusMeta } from "@/lib/presentation";
 import { StatusBadge } from "./status-badge";
@@ -180,7 +174,6 @@ export function OutlookChart({
     <section className="outlook-strip" aria-label="Delivery outlook">
       <div className="strip-head">
         <h2>
-          <ChartNoAxesCombined size={14} />
           Delivery outlook
           {forecast && <span>next {forecast.horizon} hours</span>}
         </h2>
@@ -335,10 +328,7 @@ export function PlaybookTable({
   return (
     <section className="playbook-strip" aria-label="Fallback playbook">
       <div className="strip-head">
-        <h2>
-          <ShieldCheck size={14} />
-          Fallback per community
-        </h2>
+        <h2>Fallback per community</h2>
         <span className="strip-note">From the last simulation</span>
       </div>
       {forecast ? (

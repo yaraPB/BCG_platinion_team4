@@ -62,10 +62,7 @@ export function TransportTimeline({
   return (
     <section className="transport-timeline" aria-label="Transport simulation">
       <div className="strip-head">
-        <h2>
-          <Truck size={14} />
-          Transport progress
-        </h2>
+        <h2>Transport progress</h2>
         <span className="strip-note">Illustrative timing, not live tracking</span>
         <div className="playback">
           <button

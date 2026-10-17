@@ -92,6 +92,23 @@ const riskColor: ExpressionSpecification = [
   1,
   "#ff7a6a",
 ];
+// Dash phases that read as flow from the hub toward the community.
+const FLOW_STEPS = [
+  [0, 4, 3],
+  [0.5, 4, 2.5],
+  [1, 4, 2],
+  [1.5, 4, 1.5],
+  [2, 4, 1],
+  [2.5, 4, 0.5],
+  [3, 4, 0],
+  [0, 0.5, 3, 3.5],
+  [0, 1, 3, 3],
+  [0, 1.5, 3, 2.5],
+  [0, 2, 3, 2],
+  [0, 2.5, 3, 1.5],
+  [0, 3, 3, 1],
+  [0, 3.5, 3, 0.5],
+];
 
 export default function NetworkMap({
   network,
@@ -122,6 +139,10 @@ export default function NetworkMap({
   useEffect(() => {
     callbacks.current = { onSelect };
   }, [onSelect]);
+  // Marker elements keyed by node id or `vehicle:<community>` so selection can
+  // toggle a class instead of rebuilding every marker.
+  const markerEls = useRef(new Map<string, HTMLElement>());
+  const selectedRef = useRef(selectedId);
   const risksVisible = risks || view === "forecast" || view === "playbook";
   const riskLayer = (view === "forecast" || view === "playbook") && !!roadRisk;
   // Leave room for the overlays: the journey inspector on wide screens sits on
@@ -161,6 +182,7 @@ export default function NetworkMap({
           pitch: 0,
           maxPitch: 55,
           renderWorldCopies: false,
+          fadeDuration: 150,
         });
         mapRef.current = instance;
         instance.addControl(
@@ -376,6 +398,18 @@ export default function NetworkMap({
             paint: { "line-color": modeColor, "line-width": 3.5 },
           });
           map.addLayer({
+            id: "selected-flow",
+            type: "line",
+            source: "selected",
+            layout: { "line-cap": "butt", "line-join": "round" },
+            paint: {
+              "line-color": "#f4f7f5",
+              "line-width": 1.6,
+              "line-opacity": 0.6,
+              "line-dasharray": FLOW_STEPS[0],
+            },
+          });
+          map.addLayer({
             id: "corridor-hit",
             type: "line",
             source: "corridors",
@@ -412,6 +446,7 @@ export default function NetworkMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Corridors and hazards: only when the plan, risk inputs or forecast change.
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
@@ -426,19 +461,6 @@ export default function NetworkMap({
             risk: risk.get(r.id) ?? 0,
           }),
         ),
-      ),
-    );
-    (map.getSource("selected") as GeoJSONSource).setData(
-      collection(
-        selected.legs.map((l) => line(l.coordinates, { mode: l.mode })),
-      ),
-    );
-    const before = baseline.deliveries.find(
-      (d) => d.communityId === selectedId,
-    )!;
-    (map.getSource("baseline") as GeoJSONSource).setData(
-      collection(
-        selected.status !== "on-plan" ? [line(before.coordinates)] : [],
       ),
     );
     (map.getSource("hazards") as GeoJSONSource).setData(
@@ -457,28 +479,68 @@ export default function NetworkMap({
           })),
       ),
     );
+  }, [ready, network, plan.closedRoads, probabilities, roadRisk]);
+
+  // Selected route and the planned route before closures.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    (map.getSource("selected") as GeoJSONSource).setData(
+      collection(
+        selected.legs.map((l) => line(l.coordinates, { mode: l.mode })),
+      ),
+    );
+    const before = baseline.deliveries.find(
+      (d) => d.communityId === selectedId,
+    )!;
+    (map.getSource("baseline") as GeoJSONSource).setData(
+      collection(
+        selected.status !== "on-plan" ? [line(before.coordinates)] : [],
+      ),
+    );
+  }, [ready, selected, baseline, selectedId]);
+
+  // Hover highlight from the corridor and exposure lists.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
     const highlighted = network.corridors.find((r) => r.id === highlightRoadId);
     (map.getSource("highlight") as GeoJSONSource).setData(
       collection(highlighted ? [line(highlighted.coordinates)] : []),
     );
-  }, [
-    ready,
-    network,
-    plan,
-    selected,
-    baseline,
-    selectedId,
-    probabilities,
-    roadRisk,
-    highlightRoadId,
-  ]);
+  }, [ready, network, highlightRoadId]);
 
+  // Flow along the selected route: one paint property every ~70 ms.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    if (reducedMotion) {
+      map.setPaintProperty("selected-flow", "line-dasharray", FLOW_STEPS[0]);
+      return;
+    }
+    let frame = 0,
+      step = 0,
+      last = 0;
+    const tick = (now: number) => {
+      if (now - last > 70) {
+        step = (step + 1) % FLOW_STEPS.length;
+        map.setPaintProperty("selected-flow", "line-dasharray", FLOW_STEPS[step]);
+        last = now;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [ready, reducedMotion]);
+
+  // Markers are built once per plan; selection only toggles a class.
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
     let cancelled = false,
       frame = 0;
     const markers: Marker[] = [];
+    const els = markerEls.current;
     async function drawMarkers() {
       const { Marker } = await import("maplibre-gl");
       if (cancelled || !map) return;
@@ -487,7 +549,7 @@ export default function NetworkMap({
         const el = document.createElement("button");
         el.type = "button";
         const delivery = plan.deliveries.find((d) => d.communityId === node.id);
-        el.className = `map-node ${node.kind} ${node.id === selectedId ? "selected" : ""} ${delivery ? `status-${delivery.status}` : ""}`;
+        el.className = `map-node ${node.kind} ${delivery ? `status-${delivery.status}` : ""}`;
         el.innerHTML = `<span class="node-symbol">${node.kind === "hub" ? warehouseIcon : "<span></span>"}</span><span class="node-label"><strong>${node.name}</strong><small>${node.kind === "hub" ? `${plan.stockRemaining[node.id]} t reserve` : `${(node.people / 1000).toFixed(1)}k people`}</small></span>`;
         el.setAttribute(
           "aria-label",
@@ -505,6 +567,7 @@ export default function NetworkMap({
             if (served) callbacks.current.onSelect(served.communityId);
           }
         });
+        els.set(node.id, el);
         markers.push(
           new Marker({ element: el, anchor: "left", offset: [-13, 0] })
             .setLngLat(node.coordinates)
@@ -533,13 +596,14 @@ export default function NetworkMap({
         if (!delivery.legs.length) return [];
         const el = document.createElement("button");
         el.type = "button";
-        el.className = `map-vehicle ${delivery.communityId === selectedId ? "selected" : ""}`;
+        el.className = "map-vehicle";
         el.innerHTML = `<span class="vehicle-body">${truckIcon}</span><span class="vehicle-label">VM-${String(index + 1).padStart(3, "0")}</span>`;
         el.setAttribute("aria-label", `Track transport to ${delivery.name}`);
         el.onclick = (event) => {
           event.stopPropagation();
           callbacks.current.onSelect(delivery.communityId);
         };
+        els.set(`vehicle:${delivery.communityId}`, el);
         const marker = new Marker({ element: el })
           .setLngLat(delivery.coordinates[0])
           .addTo(map);
@@ -551,12 +615,15 @@ export default function NetworkMap({
             marker,
             body: el.firstElementChild as HTMLElement,
             mode: "road",
+            bearing: 0,
           },
         ];
       });
+      applySelection(els, selectedRef.current);
       let last = 0;
       const animate = (now: number) => {
-        if (now - last > (reducedMotion ? 180 : 32)) {
+        if (!reducedMotion || now - last > 180) {
+          const bearing = map.getBearing();
           for (const vehicle of vehicles) {
             const position = vehiclePosition(
               vehicle.delivery,
@@ -570,7 +637,11 @@ export default function NetworkMap({
                 position.mode === "river" ? shipIcon : truckIcon;
               vehicle.mode = position.mode;
             }
-            vehicle.body.style.transform = `rotate(${position.bearing - map.getBearing()}deg)`;
+            const target = position.bearing - bearing;
+            if (Math.abs(target - vehicle.bearing) > 0.5) {
+              vehicle.bearing = target;
+              vehicle.body.style.transform = `rotate(${target}deg)`;
+            }
           }
           last = now;
         }
@@ -583,8 +654,14 @@ export default function NetworkMap({
       cancelled = true;
       cancelAnimationFrame(frame);
       markers.forEach((marker) => marker.remove());
+      els.clear();
     };
-  }, [ready, network, plan, selectedId, clock, reducedMotion]);
+  }, [ready, network, plan, clock, reducedMotion]);
+
+  useEffect(() => {
+    selectedRef.current = selectedId;
+    applySelection(markerEls.current, selectedId);
+  }, [selectedId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -709,7 +786,9 @@ export default function NetworkMap({
       )}
       {!ready && !failed && (
         <div className="map-loading">
-          <span className="loading-ring" />
+          <svg className="loading-route" viewBox="0 0 72 24" aria-hidden="true">
+            <path d="M3 20 C 16 20, 22 5, 36 12 S 56 20, 69 4" />
+          </svg>
           <strong>Connecting the network</strong>
           <span>Loading the South Sudan map</span>
         </div>
@@ -899,4 +978,13 @@ export default function NetworkMap({
       {children}
     </section>
   );
+}
+
+function applySelection(els: Map<string, HTMLElement>, selectedId: string) {
+  for (const [key, el] of els) {
+    const isSelected =
+      key === selectedId || key === `vehicle:${selectedId}`;
+    if (el.classList.contains("selected") === isSelected) continue;
+    el.classList.toggle("selected", isSelected);
+  }
 }

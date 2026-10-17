@@ -9,8 +9,17 @@ This redesign changes the React presentation, map styling and browser interactio
 A night-operations control room, in the spirit of crisis and logistics dashboards: the map is the hero and everything else is a quiet instrument around it.
 
 - **Colour.** Graphite surfaces (`#0b1013`, `#111a1e`, `#172128`) and a dark hillshaded basemap. Colour carries meaning only: route green `#18a874` for selected routes and on-plan deliveries, river blue `#3b85d8` for barge legs, amber `#b08c2b` for supplier changes and coral `#c43f33` for unreachable destinations and closed corridors. Hazard footprints use their own hues with a diagonal hatch. Text set in a status colour uses a lighter step so it clears 4.5:1 on panels. The four status colours pass the data-viz palette validator for colour-vision separation on both surfaces.
-- **Type.** IBM Plex Sans for everything, with IBM Plex Sans Condensed for compact labels, axis ticks and the event ticker. Big readouts use proportional figures; lists and axes use tabular figures. Fonts load through `next/font` and fall back to the system sans.
-- **Structure.** Hairlines and spacing carry hierarchy. Panels float only over the map; the side column is a list, not a stack of cards. No decorative labels or motion; the vehicles and the selected-route glow are the only moving things, and both respect reduced-motion preferences.
+- **Type.** Archivo, one variable family with a width axis: normal width for text and readouts, an 84% narrow cut for compact labels, axis ticks, table headers and the event ticker. Big readouts use proportional figures; lists and axes use tabular figures. The font loads through `next/font` and falls back to the system sans.
+- **Structure.** Hairlines and spacing carry hierarchy; corners are 4 to 6 px and panels are solid, not blurred glass. Panels float only over the map; the side column is a list, not a stack of cards. Icons are functional (status, transport mode, tools), not decoration on headings.
+- **Motion.** Only motion that explains something: vehicles move along their legs on the shared clock; a dash pattern flows along the selected route from hub to community; a ring plays once when a community is selected; a sweep runs under the header while the server recalculates; the loading state draws a route. Everything respects reduced-motion preferences, and nothing animates box-shadows, blur or filters, which keeps the WebGL map smooth.
+
+## Performance notes
+
+- Map markers are created once per plan; selecting a delivery toggles a class instead of rebuilding them, and vehicles update every frame with a cheap transform.
+- MapLibre sources update in separate effects (corridors and hazards, selected route, hover highlight) so a hover does not rewrite every source.
+- No `backdrop-filter`, no `filter: drop-shadow` on moving elements, no box-shadow animations.
+- Development mode runs React strict mode with double effects; judge smoothness on `npm run build && npm start`.
+- A hydration warning that lists `bis_skin_checked` or `bis_register` attributes comes from a browser extension rewriting the DOM, not from the app. Test in an incognito window.
 
 ## Screen structure
 

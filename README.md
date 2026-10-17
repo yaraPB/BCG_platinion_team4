@@ -19,6 +19,10 @@ Open [localhost:3000](http://localhost:3000). No environment variables, API keys
 
 Views are deep-linkable: `/#forecast`, `/#playbook`, `/#corridors`, or `/?view=forecast` for links that must survive redirects.
 
+**Hydration warning in development?** If the console diff shows attributes such as `bis_skin_checked`, `bis_register` or `__processed_…`, a browser extension (Bitdefender's web protection injects these) is rewriting the page before React hydrates. The app itself hydrates cleanly; open it in an incognito or guest window, or exclude `localhost` in the extension, and the warning disappears.
+
+For the smoothest experience test with a production build (`npm run build && npm start`); development mode runs React in strict mode with double effects and unminified bundles.
+
 For a production build:
 
 ```bash
