@@ -1,6 +1,6 @@
 # FoodBridge
 
-> *Via* (road) + *Mensa* (table): a road to every table.
+> [Link to the website](https://viamensa-web.greenbay-6805cff2.germanywestcentral.azurecontainerapps.io/)
 
 FoodBridge plans food deliveries from a client's suppliers to the communities it serves and keeps them moving when roads fail. When a corridor is cut (flood, conflict, accident, anything), it finds the cheapest next option: a detour from the same supplier, another supplier that can still reach the community (even when the network has split in two), the river, or air as a last resort. It reads news and field alerts, ranks the issues likely to disrupt the network, simulates them together, and prepares fallbacks before they are needed.
 
